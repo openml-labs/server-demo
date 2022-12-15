@@ -1,3 +1,5 @@
-sqlalchemy
+sqlalchemy==2.0.0b4
 fastapi
 uvicorn
+requests
+mysqlclient
