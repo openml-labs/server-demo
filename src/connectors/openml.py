@@ -4,7 +4,7 @@ and how to convert the OpenML response to some agreed AIoD format.
 """
 import requests
 
-from src.database.models import Dataset
+from database.models import Dataset
 
 
 def fetch_dataset(dataset: Dataset) -> dict:
@@ -14,7 +14,7 @@ def fetch_dataset(dataset: Dataset) -> dict:
     if response.status_code != 200:
         raise RuntimeError(f"Unexpected response fetching dataset meta-data: {response!r}")
 
-    dataset_json = response.json()
+    dataset_json = response.json()["data_set_description"]
 
     # Here we can format the response into some standardized way, maybe this includes some
     # dataset characteristics. These need to be retrieved separately from OpenML:
@@ -23,7 +23,10 @@ def fetch_dataset(dataset: Dataset) -> dict:
     if response.status_code != 200:
         raise RuntimeError(f"Unexpected response fetching dataset qualities: {response!r}")
 
-    qualities_json = response.json()
+    qualities_json = {
+        quality["name"]: quality["value"]
+        for quality in response.json()["data_qualities"]["quality"]
+    }
 
     return {
         "name": dataset_json["name"],
