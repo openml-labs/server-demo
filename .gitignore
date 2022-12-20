@@ -1,3 +1,7 @@
+# Project Specific
+# data/ is intended for database data from the mysql container
+data/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
