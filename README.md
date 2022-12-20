@@ -83,7 +83,8 @@ docker run --network sql-network -p 8001:8000 -it --name apiserver demo
 At this point you should be able to visit the server from your browser at `localhost:8001/docs`.
 
 #### Local Installation
-If you want to run the server locally, we advise creating a virtual environment first and install the dependencies there:
+If you want to run the server locally, you need Python 3.11.
+We advise creating a virtual environment first and install the dependencies there:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
