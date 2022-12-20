@@ -77,8 +77,10 @@ docker build --tag demo:latest -f Dockerfile .
 then create a container from that image, remember to forward the port and connect to the right docker network.
 
 ```bash
-docker run --network sql-network -p 8001:8000 -it demo
+docker run --network sql-network -p 8001:8000 -it --name apiserver demo
 ```
+
+At this point you should be able to visit the server from your browser at `localhost:8001/docs`.
 
 #### Local Installation
 If you want to run the server locally, we advise creating a virtual environment first and install the dependencies there:
@@ -92,8 +94,10 @@ In case this tooling is not already available, please have a look at [their inst
 
 After installing the dependencies you can start the server:
 ```bash
-uvicorn src.main:app --reload
+cd src
+python main.py --reload
 ```
+
 The `--reload` argument will automatically restart the app if changes are made to the source files.
 
 ### Populating the Database
@@ -129,5 +133,3 @@ Mount your repository's `src` directory into the container's `/app` directory by
 #### Automatically Restart on Change
 If you want to automatically restart the server when a change is made to a file in the project, use the `--reload` parameter.
 It is important to realize that this also re-initializes the connection to the database, and possibly will do any start-up work (e.g., populating the database).
-
-
