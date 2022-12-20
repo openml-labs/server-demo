@@ -9,18 +9,61 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from sqlalchemy import select, String
 
+import argparse
 import requests
+import tomllib
 import uvicorn
 
 from database.setup import connect_to_database, populate_database
 from database.models import Dataset, Publication, Base
 from connectors import openml
 
+with open("config.toml", "rb") as fh:
+    config = tomllib.load(fh)
+
+username = config.get("database", {}).get("name", "root")
+password = config.get("database", {}).get("password", "ok")
+host = config.get("database", {}).get("host", "demodb")
+port = config.get("database", {}).get("port", 3306)
+database = config.get("database", {}).get("database", "aiod")
+
+db_url = f"mysql://{username}:{password}@{host}:{port}/{database}"
+
+parser = argparse.ArgumentParser(
+    description="Please refer to the README."
+)
+
+parser.add_argument(
+    "--rebuild-db",
+    default="only-if-empty",
+    choices=["no", "only-if-empty", "always"],
+    help="Determines if the database is recreated.",
+)
+
+parser.add_argument(
+    "--populate",
+    default="example",
+    choices=["nothing", "example", "openml"],
+    help="Determines if the database gets populated with data.",
+)
+
+parser.add_argument(
+    "--reload",
+    action="store_true",
+    help="Use `--reload` for FastAPI.",
+)
+
+args = parser.parse_args()
+
+delete_before_create = (args.rebuild_db == "always")
+engine = connect_to_database(db_url, delete_first=delete_before_create)
+
+if args.populate == "example":
+    populate_database(engine, only_if_empty=True)
+elif args.populate == "openml":
+    raise NotImplementedError("Populating from OpenML not yet implemented.")
 
 app = FastAPI()
-
-engine = connect_to_database("mysql://root:ok@127.0.0.1:3307/aiod")
-populate_database(engine, only_if_empty=True)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -140,4 +183,4 @@ def get_openml(url: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app)
+    uvicorn.run(app, host="0.0.0.0")

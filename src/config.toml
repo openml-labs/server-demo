@@ -1,0 +1,13 @@
+# Configures the REST API
+
+# Information on which database to connect to
+[database]
+host = "demodb"
+port = 3306
+database = "aiod"
+username = "root"
+password = "ok"
+
+# Additional options for development
+[dev]
+reload = true
