@@ -4,6 +4,8 @@ This repository contains an example of how to provide a REST API built with [Fas
 that interacts with a database ([MySQL](https://hub.docker.com/_/mysql)) and [OpenML's REST API](https://www.openml.org/apis).
 Both the database and the REST API are run from docker in separate containers.
 
+*Tested and developed on MacOS 12.4.*
+
 ## Installation
 This repository contains two systems; the database and the REST API.
 As a database we use a containerized MySQL server (through Docker), the REST API can be run locally or containerized.
@@ -60,18 +62,30 @@ If you want to use a path within this repository directory, we recommend naming 
 For more information, see "Where to Store Data" in the linked documentation.
 
 ### Starting the REST API
+The repository provides a Dockerfile to run the REST API in a containerized environment.
 
-#### Local
-Set up a Python environment and install the dependencies:
+#### Using the Docker container
+First, build the docker image from the dockerfile:
+```bash
+docker build --tag demo:latest -f Dockerfile .
+```
+
+#### Local Installation
+If you want to run the server locally, we advise creating a virtual environment first and install the dependencies there:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 python -m pip install -r requirements.txt
 ```
-Start the server:
+Note that the `mysqlclient` dependency requires additional tooling before it can be installed.
+In case this tooling is not already available, please have a look at [their installation instructions](https://github.com/PyMySQL/mysqlclient#install).
+
+After installing the dependencies you can start the server:
 ```bash
 uvicorn src.main:app --reload
 ```
+The `--reload` argument will 
 
-#### Containerized
+### Usage
+Configuration and --reload stuff
 
