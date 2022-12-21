@@ -109,7 +109,7 @@ You can change this behavior through parameters of the script:
    * no: connect to the database but don't make any modifications on startup.
    * only-if-empty: if the database does not exist, create it. Then, if the tables do not exist, create them. 
      Then, if the tables are empty, populate according to `populate`.
-   * always: drop the configured database and rebuild its *structure* from scratch.
+   * always: drop the configured database and rebuild its structure from scratch.
      Effectively a `DROP DATABASE` followed by a `CREATE DATABASE` and the creation of the tables.
      The database is then repopulated according to `populate`.
      **Important:** data in the database is not restored. All data will be lost. Do not use this option
@@ -119,7 +119,7 @@ You can change this behavior through parameters of the script:
     Specifies what data to add the database, only used if `rebuild-db` is "only-if-empty" or "always".
    * nothing: don't add any data.
    * example: registers two datasets and two publications.
-   * openml (TODO): registers all datasets on OpenML.
+   * openml: registers all datasets on OpenML, this may take a while (~30 minutes).
 
 
 ## Usage

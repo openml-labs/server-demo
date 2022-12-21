@@ -6,8 +6,8 @@ Note: order matters for overloaded paths (https://fastapi.tiangolo.com/tutorial/
 from fastapi import FastAPI, Query, Body
 from fastapi.responses import HTMLResponse
 
-from sqlalchemy.orm import Session, Mapped, mapped_column
-from sqlalchemy import select, String
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 import argparse
 import requests
@@ -15,7 +15,7 @@ import tomllib
 import uvicorn
 
 from database.setup import connect_to_database, populate_database
-from database.models import Dataset, Publication, Base
+from database.models import Dataset, Publication
 from connectors import openml
 
 with open("config.toml", "rb") as fh:
@@ -58,10 +58,8 @@ args = parser.parse_args()
 delete_before_create = (args.rebuild_db == "always")
 engine = connect_to_database(db_url, delete_first=delete_before_create)
 
-if args.populate == "example":
-    populate_database(engine, only_if_empty=True)
-elif args.populate == "openml":
-    raise NotImplementedError("Populating from OpenML not yet implemented.")
+if args.populate in ["example", "openml"]:
+    populate_database(engine, data=args.populate, only_if_empty=True)
 
 app = FastAPI()
 

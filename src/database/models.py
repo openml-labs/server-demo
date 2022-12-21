@@ -7,7 +7,6 @@ See also:
 Note: because we use MySQL in the demo, we need to explicitly set maximum string lengths.
 """
 import dataclasses
-from collections.abc import Iterable
 
 from sqlalchemy import ForeignKey, Table, Column, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDataclass, relationship
@@ -61,7 +60,7 @@ class Dataset(Base):
     """ Keeps track of which dataset is stored where. """
     __tablename__ = "datasets"
 
-    name: Mapped[str] = mapped_column(String(50))
+    name: Mapped[str] = mapped_column(String(150))
     platform: Mapped[str] = mapped_column(String(30))
     platform_specific_identifier: Mapped[str] = mapped_column(String(100))
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
