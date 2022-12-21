@@ -7,6 +7,9 @@ Both the database and the REST API are run from docker in separate containers.
 The REST API demonstrates an example simplified AIoD application of providing information on datasets and publications.
 It has its own database in which to store meta-data, 
 but can also access additional meta-data from data providers (only OpenML in the demo).
+An example flow of a user requesting a list of datasets, and then obtaining detailed meta-data for the dataset is shown below.
+
+![Flowchart of the program.](flowchart.png)
 
 *Tested and developed on `MacOS 12.4`, `Docker 20.10.17`.*
 
@@ -134,3 +137,33 @@ Mount your repository's `src` directory into the container's `/app` directory by
 #### Automatically Restart on Change
 If you want to automatically restart the server when a change is made to a file in the project, use the `--reload` parameter.
 It is important to realize that this also re-initializes the connection to the database, and possibly will do any start-up work (e.g., populating the database).
+
+#### Database Structure
+The Python classes that define the database tables are found in [src/database/models.py](src/database/models.py).
+Additionally, a relationship table between the Dataset and Publication is made to allow for their many-to-many relationship.
+
+**Dataset**: stores simple meta-data for datasets with different data providers
+
+| Attribute                    | Description                                                                     |
+|------------------------------|---------------------------------------------------------------------------------|
+ | id                           | a unique identifier                                                             |
+| name                         | name of the dataset                                                             |
+ | platform                     | identifies the platform on which the dataset is stored                          |
+ | platform_specific_identifier | the identifier with which the dataset is uniquely identified at the `platform`. |
+
+
+**Publication**: stores simple meta-data for publications
+
+| Attribute                    | Description                                                                     |
+|------------------------------|---------------------------------------------------------------------------------|
+ | id                           | a unique identifier                                                             |
+| title                        | title of the publication                                                        |
+ | url                          | link to a page where the paper can be accessed                                  |
+ 
+**dataset_publication**: stores which datasets are related to which publications
+
+| Attribute      | Description                                    |
+|----------------|------------------------------------------------|
+ | publication_id | refers to an id in the publication table       |
+| dataset_id     | refers to an id in the dataset table           |
+ 
