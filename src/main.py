@@ -66,14 +66,17 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> list[str]:
-    """ Homepage, provides the README. """
-    with open("README.md", 'r') as fh:
-        return (
-            "<html></head><body>"
-            + "Visit endpoint `/docs` for documentation on the REST API.</br>"
-            + '</br>'.join(fh.readlines())
-            + "</body></html>"
-        )
+    return """
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta http-equiv="refresh" content="0; url='docs'" />
+      </head>
+      <body>
+        <p>The REST API documentation is <a href="docs">here</a>.</p>
+      </body>
+    </html>
+    """
 
 
 @app.get("/datasets/")
@@ -160,4 +163,4 @@ def get_publication(identifier: str) -> dict:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0")
+    uvicorn.run("main:app", host="0.0.0.0", reload=args.reload)
