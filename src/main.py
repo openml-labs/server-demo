@@ -159,26 +159,5 @@ def get_publication(identifier: str) -> dict:
         return publication.to_dict(depth=1)
 
 
-@app.get("/openml/{url:path}")
-def get_openml(url: str):
-    """
-    Provides direct access to the OpenML JSON API.
-    For more information, see `https://www.openml.org/apis`.
-
-    Params
-    ------
-     * **url**, `str`: the OpenML endpoint to reach.
-
-    Returns
-    -------
-    Whatever JSON the OpenML server returns for that endpoint.
-    """
-    openml_url = f"https://www.openml.org/api/v1/json/{url}"
-    response = requests.get(openml_url)
-    if response.status_code != 200:
-        return f"Invalid OpenML url: {openml_url}"
-    return response.json()
-
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0")
