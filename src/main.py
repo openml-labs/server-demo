@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 import argparse
-import requests
 import tomllib
 import uvicorn
 
@@ -66,6 +65,7 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> list[str]:
+    """ Provides a redirect page to the docs. """
     return """
     <!DOCTYPE html>
     <html>
