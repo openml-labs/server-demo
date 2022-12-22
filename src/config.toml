@@ -2,7 +2,7 @@
 
 # Information on which database to connect to
 [database]
-host = "demodb"
+host = "sqlserver"
 port = 3306
 database = "aiod"
 username = "root"

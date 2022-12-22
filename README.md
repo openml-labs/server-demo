@@ -57,8 +57,8 @@ mysql> SHOW DATABASES;
 The data is persistent when simply stopping and restarting the server:
 
 ```bash
-docker stop demodb
-docker start demodb
+docker stop sqlserver
+docker start sqlserver
 ```
 
 However, all data is lost when the container is deleted.
@@ -80,10 +80,10 @@ docker build --tag demo:latest -f Dockerfile .
 then create a container from that image, remember to forward the port and connect to the right docker network.
 
 ```bash
-docker run --network sql-network -p 8001:8000 -it --name apiserver demo
+docker run --network sql-network -it -p 8000:8000 --name apiserver demo
 ```
 
-At this point you should be able to visit the server from your browser at `localhost:8001/docs`.
+At this point you should be able to visit the server from your browser at `localhost:8000/docs`.
 
 #### Local Installation
 If you want to run the server locally, you need Python 3.11.
