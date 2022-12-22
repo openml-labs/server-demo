@@ -31,7 +31,7 @@ docker network create sql-network
 
 Then, start the MySQL Server:
 ```bash
-docker run -e MYSQL_ROOT_PASSWORD=ok --name sqlserver --network sql-network -p 3306:3306 -d mysql
+docker run -e MYSQL_ROOT_PASSWORD=ok --name sqlserver --network sql-network -d mysql
 ```
 
 That's all! You should be able to connect to the server now, though no database is present yet:
