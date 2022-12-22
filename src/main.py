@@ -3,8 +3,9 @@ Defines Rest API endpoints.
 
 Note: order matters for overloaded paths (https://fastapi.tiangolo.com/tutorial/path-params/#order-matters).
 """
-from fastapi import FastAPI, Query, Body
+from fastapi import FastAPI, Query, Body, Depends
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -63,6 +64,13 @@ if args.populate in ["example", "openml"]:
 app = FastAPI()
 
 
+# Multiple endpoints share the same set of parameters, we define a class for easy re-use of dependencies:
+# https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/?h=depends#classes-as-dependencies
+class Pagination(BaseModel):
+    offset: int = 0
+    limit: int = 100
+
+
 @app.get("/", response_class=HTMLResponse)
 def home() -> list[str]:
     """ Provides a redirect page to the docs. """
@@ -80,18 +88,27 @@ def home() -> list[str]:
 
 
 @app.get("/datasets/")
-def list_datasets(platforms: list[str] | None = Query(default=[])) -> list[dict]:
+def list_datasets(
+        platforms: list[str] | None = Query(default=[]),
+        pagination: Pagination = Depends(Pagination),
+) -> list[dict]:
     """ Lists all datasets registered with AIoD.
 
     Query Parameter
     ------
      * platforms, list[str], optional: if provided, list only datasets from the given platform.
     """
+    # For additional information on querying through SQLAlchemy's ORM:
+    # https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
     with Session(engine) as session:
         return [
             dataset.to_dict(depth=0)
-            for dataset in session.scalars(select(Dataset)).all()
-            if not platforms or dataset.platform in platforms
+            for dataset in session.scalars(
+                select(Dataset)
+                .where(Dataset.platform.in_(platforms))
+                .offset(pagination.offset)
+                .limit(pagination.limit)
+            ).all()
         ]
 
 
@@ -121,7 +138,7 @@ def register_dataset(
     """ Register a dataset with AIoD.
 
     Expects a JSON body with the following key/values:
-     - name (max 50 characters): Name of the dataset.
+     - name (max 150 characters): Name of the dataset.
      - platform (max 30 characters): Name of the platform on which the dataset resides.
      - platform_identifier (max 100 characters):
         Identifier which uniquely defines the dataset for the platform.
@@ -142,12 +159,16 @@ def register_dataset(
 
 
 @app.get("/publications")
-def list_publications() -> list[dict]:
+def list_publications(pagination: Pagination = Depends(Pagination)) -> list[dict]:
     """ Lists all publications registered with AIoD. """
     with Session(engine) as session:
         return [
             publication.to_dict(depth=0)
-            for publication in session.scalars(select(Publication)).all()
+            for publication in session.scalars(
+                select(Publication)
+                .offset(pagination.offset)
+                .limit(pagination.limit)
+            ).all()
         ]
 
 
