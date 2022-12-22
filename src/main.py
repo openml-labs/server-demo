@@ -100,12 +100,13 @@ def list_datasets(
     """
     # For additional information on querying through SQLAlchemy's ORM:
     # https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
+    platform_filter = Dataset.platform.in_(platforms) if platforms else True
     with Session(engine) as session:
         return [
             dataset.to_dict(depth=0)
             for dataset in session.scalars(
                 select(Dataset)
-                .where(Dataset.platform.in_(platforms))
+                .where(platform_filter)
                 .offset(pagination.offset)
                 .limit(pagination.limit)
             ).all()
