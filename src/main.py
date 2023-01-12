@@ -12,6 +12,7 @@ from fastapi import Query, Body, Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from connectors import openml
@@ -108,17 +109,20 @@ def add_routes(app, engine):
         """
         # For additional information on querying through SQLAlchemy's ORM:
         # https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
-        platform_filter = Dataset.platform.in_(platforms) if platforms else True
-        with Session(engine) as session:
-            return [
-                dataset.to_dict(depth=0)
-                for dataset in session.scalars(
-                    select(Dataset)
-                    .where(platform_filter)
-                    .offset(pagination.offset)
-                    .limit(pagination.limit)
-                ).all()
-            ]
+        try:
+            platform_filter = Dataset.platform.in_(platforms) if platforms else True
+            with Session(engine) as session:
+                return [
+                    dataset.to_dict(depth=0)
+                    for dataset in session.scalars(
+                        select(Dataset)
+                        .where(platform_filter)
+                        .offset(pagination.offset)
+                        .limit(pagination.limit)
+                    ).all()
+                ]
+        except Exception as e:
+            _wrap_as_http_exception(e)
 
     @app.get("/dataset/{identifier}")
     def get_dataset(identifier: str) -> dict:
@@ -158,47 +162,63 @@ def add_routes(app, engine):
         """
         # Alternatively, consider defining Pydantic models instead to define the request body:
         # https://fastapi.tiangolo.com/tutorial/body/#request-body
-
-        with Session(engine) as session:
-            new_dataset = Dataset(
-                name=name,
-                platform=platform,
-                platform_specific_identifier=platform_identifier
-            )
-            session.add(new_dataset)
-            session.commit()
-            return new_dataset.to_dict(depth=1)
+        try:
+            with Session(engine) as session:
+                new_dataset = Dataset(
+                    name=name,
+                    platform=platform,
+                    platform_specific_identifier=platform_identifier
+                )
+                session.add(new_dataset)
+                session.commit()
+                return new_dataset.to_dict(depth=1)
+        except Exception as e:
+            if isinstance(e, IntegrityError):
+                raise HTTPException(status_code=409, detail="Duplicate entry.")
+            else:
+                _wrap_as_http_exception(e)
 
     @app.get("/publications")
     def list_publications(pagination: Pagination = Depends(Pagination)) -> list[dict]:
         """ Lists all publications registered with AIoD. """
-        with Session(engine) as session:
-            return [
-                publication.to_dict(depth=0)
-                for publication in session.scalars(
-                    select(Publication)
-                    .offset(pagination.offset)
-                    .limit(pagination.limit)
-                ).all()
-            ]
+        try:
+            with Session(engine) as session:
+                return [
+                    publication.to_dict(depth=0)
+                    for publication in session.scalars(
+                        select(Publication)
+                        .offset(pagination.offset)
+                        .limit(pagination.limit)
+                    ).all()
+                ]
+        except Exception as e:
+            _wrap_as_http_exception(e)
 
     @app.get("/publication/{identifier}")
     def get_publication(identifier: str) -> dict:
         """ Retrieves all information for a specific publication registered with AIoD. """
-        with Session(engine) as session:
-            query = select(Publication).where(Publication.id == identifier)
-            publication = session.scalars(query).first()
-            if not publication:
-                return {"error": f"Publication '{identifier}' not found."}
-            return publication.to_dict(depth=1)
+        try:
+            with Session(engine) as session:
+                query = select(Publication).where(Publication.id == identifier)
+                publication = session.scalars(query).first()
+                if not publication:
+                    return {"error": f"Publication '{identifier}' not found."}
+                return publication.to_dict(depth=1)
+        except Exception as e:
+            _wrap_as_http_exception(e)
+
+
+def create_app():
+    app = FastAPI()
+    args = _parse_args()
+    engine_ = _populated_engine(args)
+    add_routes(app, engine_)
+    return app
 
 
 def main():
     args = _parse_args()
-    app = FastAPI()
-    engine = _populated_engine(args)
-    add_routes(app, engine)
-    uvicorn.run("main:app", host="0.0.0.0", reload=args.reload)
+    uvicorn.run("main:create_app", host="0.0.0.0", reload=args.reload, factory=True)
 
 
 if __name__ == "__main__":

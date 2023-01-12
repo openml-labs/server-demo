@@ -8,7 +8,7 @@ Note: because we use MySQL in the demo, we need to explicitly set maximum string
 """
 import dataclasses
 
-from sqlalchemy import ForeignKey, Table, Column, String
+from sqlalchemy import ForeignKey, Table, Column, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDataclass, relationship
 
 
@@ -59,10 +59,13 @@ dataset_publication_relationship = Table(
 class Dataset(Base):
     """ Keeps track of which dataset is stored where. """
     __tablename__ = "datasets"
-
-    name: Mapped[str] = mapped_column(String(150))
-    platform: Mapped[str] = mapped_column(String(30))
-    platform_specific_identifier: Mapped[str] = mapped_column(String(100))
+    __table_args__ = (
+        UniqueConstraint("platform", "platform_specific_identifier",
+                         name="dataset_unique_platform_platform_specific_identifier"),
+    )
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    platform: Mapped[str] = mapped_column(String(30), nullable=False)
+    platform_specific_identifier: Mapped[str] = mapped_column(String(100), nullable=False)
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     publications: Mapped[list["Publication"]] = relationship(
         default_factory=list,
