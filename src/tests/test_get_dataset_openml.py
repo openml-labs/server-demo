@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from database.models import Dataset
 from main import add_routes
-from tests.testutils.mocking import mocked_database_engine, add_object_to_engine
+from tests.testutils.mocking import mocked_database_engine, add_objects_to_engine
 from tests.testutils.paths import test_resources_path
 
 OPENML_URL = "https://www.openml.org/api/v1/json"
@@ -27,7 +27,7 @@ class GetOpenmlDatasetTestcase(unittest.TestCase):
 
         with responses.RequestsMock() as mocked_requests:
             expected_info = GetOpenmlDatasetTestcase._mock_responses(mocked_requests, dataset_description)
-            add_object_to_engine(dataset_description, self.engine)
+            add_objects_to_engine(self.engine, dataset_description)
 
             response = self.client.get("/dataset/1")
         self.assertEqual(response.status_code, 200)
@@ -49,7 +49,7 @@ class GetOpenmlDatasetTestcase(unittest.TestCase):
         dataset_description = Dataset(name="anneal", platform="openml", platform_specific_identifier="1")
         with responses.RequestsMock(assert_all_requests_are_fired=False) as mocked_requests:
             GetOpenmlDatasetTestcase._mock_responses(mocked_requests, dataset_description)
-            add_object_to_engine(dataset_description, self.engine)
+            add_objects_to_engine(self.engine, dataset_description)
             response = self.client.get("/dataset/2")  # Note only dataset 1 exists
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()['detail'], "Dataset '2' not found in the database.")
@@ -66,7 +66,7 @@ class GetOpenmlDatasetTestcase(unittest.TestCase):
                     }
                 }, status=412,
             )
-            add_object_to_engine(dataset_description, self.engine)
+            add_objects_to_engine(self.engine, dataset_description)
             response = self.client.get("/dataset/1")
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()['detail'], "Error while fetching data from OpenML: 'Unknown dataset'")

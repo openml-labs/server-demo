@@ -63,6 +63,16 @@ def _populated_engine(args):
     return engine_
 
 
+def _wrap_as_http_exception(e):
+    if not isinstance(e, HTTPException):
+        traceback.print_exc()
+        raise HTTPException(status_code=500,
+                            detail="Unexpected exception while processing your request. Please "
+                                   "contact the maintainers.")
+    else:
+        raise e
+
+
 def add_routes(app, engine):
     @app.get("/", response_class=HTMLResponse)
     def home() -> str:
@@ -128,10 +138,8 @@ def add_routes(app, engine):
                                         detail=f"No connector for platform '{dataset.platform}' available.")
 
                 return {**dataset_json, **dataset.to_dict(depth=1)}
-        except Exception:
-            traceback.print_exc()
-            raise HTTPException(status_code=500, detail="Unexpected exception while processing your request. Please "
-                                                        "contact the maintainers.")
+        except Exception as e:
+            _wrap_as_http_exception(e)
 
     @app.post("/register/dataset/")
     def register_dataset(

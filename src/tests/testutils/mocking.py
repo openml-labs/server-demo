@@ -13,11 +13,11 @@ def mocked_database_engine(temporary_file):
     return engine
 
 
-def add_object_to_engine(db_object, engine):
+def add_objects_to_engine(engine, *objects):
     """
-    Add an object to the database. For testing, we use a temporary sqlite database instead of the real database.
-    This mocked sqlite database starts unpopulated.
+    Add one or more objects to the database. For testing, we use a temporary sqlite database instead of the real
+    database. This mocked sqlite database starts unpopulated.
     """
     with Session(engine) as session:
-        session.add(db_object)
+        session.add_all(objects)
         session.commit()
