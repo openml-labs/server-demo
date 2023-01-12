@@ -25,6 +25,16 @@ def test_happy_path(engine, client):
     assert len(response_json) == 5
 
 
+def test_unicode(engine, client):
+    name = "По 123 oživlënnym Ἰοὺ ἰού कृच्छ्राद् 子曰رَّحْمـَبنِ"
+    response = client.post("/register/dataset", json={
+        "name": name, "platform": "openml", "platform_identifier": "2"
+    })
+    assert response.status_code == 200
+    response_json = response.json()
+    assert response_json["name"] == name
+
+
 def test_duplicated_dataset(engine, client):
     datasets = [Dataset(name="dset1", platform="openml", platform_specific_identifier="1")]
     with Session(engine) as session:
