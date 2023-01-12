@@ -42,7 +42,7 @@ def test_dataset_not_found_in_local_db(engine, client):
         with Session(engine) as session:
             session.add(dataset_description)
             session.commit()
-        response = client.get("/dataset/2")  # Note only dataset 1 exists
+        response = client.get("/dataset/2")  # Note that only dataset 1 exists
     assert response.status_code == 404
     assert response.json()['detail'] == "Dataset '2' not found in the database."
 

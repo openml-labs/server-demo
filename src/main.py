@@ -202,7 +202,8 @@ def add_routes(app, engine):
                 query = select(Publication).where(Publication.id == identifier)
                 publication = session.scalars(query).first()
                 if not publication:
-                    return {"error": f"Publication '{identifier}' not found."}
+                    raise HTTPException(status_code=404,
+                                        detail=f"Publication '{identifier}' not found in the database.")
                 return publication.to_dict(depth=1)
         except Exception as e:
             _wrap_as_http_exception(e)
