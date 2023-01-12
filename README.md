@@ -93,7 +93,7 @@ docker build --tag ai4eu_server_demo:latest -f Dockerfile .
 then create a container from that image, remember to forward the port and connect to the right docker network.
 
 ```bash
-docker run --network sql-network -it -p 8000:8000 --name apiserver ai4eu_server_demo
+docker run --network sql-network -it -p 8000:8000 --name apiserver -v /ABSOLUTE/PATH/TO/SRC:/app ai4eu_server_demo
 ```
 
 At this point you should be able to visit the server from your browser at `localhost:8000/docs`.

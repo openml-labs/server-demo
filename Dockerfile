@@ -9,7 +9,5 @@ COPY ./requirements.txt /app/requirements.txt
 
 RUN pip install -r requirements.txt
 
-COPY ./src /app
-
 #ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0"]
 ENTRYPOINT ["python", "main.py"]
