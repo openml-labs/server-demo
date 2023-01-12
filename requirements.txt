@@ -3,6 +3,5 @@ fastapi
 uvicorn
 requests
 mysqlclient
-responses
 pydantic
 httpx
