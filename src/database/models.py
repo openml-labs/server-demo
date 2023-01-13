@@ -87,7 +87,13 @@ class Publication(Base):
     """Any publication."""
 
     __tablename__ = "publications"
-
+    __table_args__ = (
+        UniqueConstraint(
+            "title",
+            "url",
+            name="publications_unique_title_url",
+        ),
+    )
     title: Mapped[str] = mapped_column(String(250), nullable=False)
     url: Mapped[str] = mapped_column(String(250), nullable=False)
     id: Mapped[int] = mapped_column(init=False, primary_key=True)

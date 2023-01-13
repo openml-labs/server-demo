@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
@@ -30,8 +31,11 @@ def test_happy_path(client: TestClient, engine: Engine):
     assert len(response_json) == 5
 
 
-def test_unicode(client: TestClient, engine: Engine):
-    name = "По 123 oživlënnym Ἰοὺ ἰού कृच्छ्राद् 子曰رَّحْمـَبنِ"
+@pytest.mark.parametrize(
+    "name",
+    ["\"'é:?", "!@#$%^&*()`~", "Ω≈ç√∫˜µ≤≥÷", "田中さんにあげて下さい", " أي بعد, ", "𝑻𝒉𝒆 𝐪𝐮𝐢𝐜𝐤", "گچپژ"],
+)
+def test_unicode(client: TestClient, engine: Engine, name):
     response = client.post(
         "/register/dataset", json={"name": name, "platform": "openml", "platform_identifier": "2"}
     )
