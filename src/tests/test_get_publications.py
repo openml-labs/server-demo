@@ -19,8 +19,8 @@ def test_happy_path(client: TestClient, engine: Engine):
     assert response.status_code == 200
     response_json = response.json()
     assert len(response_json) == 2
-    assert {ds["title"] for ds in response_json} == {"Title 1", "Title 2"}
-    assert {ds["url"] for ds in response_json} == {"https://test.test", "https://test.test2"}
-    assert {ds["id"] for ds in response_json} == {1, 2}
-    for ds in response_json:
-        assert len(ds) == 3
+    assert {pub["title"] for pub in response_json} == {"Title 1", "Title 2"}
+    assert {pub["url"] for pub in response_json} == {"https://test.test", "https://test.test2"}
+    assert {pub["id"] for pub in response_json} == {1, 2}
+    for pub in response_json:
+        assert len(pub) == 3
