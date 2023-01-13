@@ -1,14 +1,17 @@
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session
+from starlette.testclient import TestClient
 
 from database.models import Dataset
 
 
-def test_happy_path(engine, client):
+def test_happy_path(client: TestClient, engine: Engine):
     datasets = [Dataset(name="dset1", platform="openml", platform_specific_identifier="1"),
                 Dataset(name="dset1", platform="other_platform", platform_specific_identifier="1"),
                 Dataset(name="dset2", platform="other_platform", platform_specific_identifier="2"),
                 ]
     with Session(engine) as session:
+        # Populate database
         session.add_all(datasets)
         session.commit()
 

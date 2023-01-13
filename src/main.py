@@ -11,7 +11,7 @@ import uvicorn
 from fastapi import Query, Body, Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -20,7 +20,7 @@ from database.models import Dataset, Publication
 from database.setup import connect_to_database, populate_database
 
 
-def _parse_args():
+def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Please refer to the README."
     )
@@ -44,7 +44,10 @@ def _parse_args():
     return parser.parse_args()
 
 
-def _populated_engine(args):
+def _engine(rebuild_db: str) -> Engine:
+    """
+    Return a SqlAlchemy engine, backed by the MySql connection as configured in the configuration file.
+    """
     with open("config.toml", "rb") as fh:
         config = tomllib.load(fh)
     db_config = config.get("database", {})
@@ -56,25 +59,24 @@ def _populated_engine(args):
 
     db_url = f"mysql://{username}:{password}@{host}:{port}/{database}"
 
-    delete_before_create = (args.rebuild_db == "always")
-    engine_ = connect_to_database(db_url, delete_first=delete_before_create)
-
-    if args.populate in ["example", "openml"]:
-        populate_database(engine_, data=args.populate, only_if_empty=True)
-    return engine_
+    delete_before_create = (rebuild_db == "always")
+    return connect_to_database(db_url, delete_first=delete_before_create)
 
 
-def _wrap_as_http_exception(e):
-    if not isinstance(e, HTTPException):
-        traceback.print_exc()
-        raise HTTPException(status_code=500,
-                            detail="Unexpected exception while processing your request. Please "
-                                   "contact the maintainers.")
-    else:
-        raise e
+def _wrap_as_http_exception(exception: Exception) -> HTTPException:
+    if isinstance(exception, HTTPException):
+        return exception
+
+    # This is an unexpected error. A mistake on our part. End users should not be informed about details of problems
+    # they are not expected to fix, so we give a generic response and log the error.
+    traceback.print_exc()
+    return HTTPException(status_code=500,
+                         detail="Unexpected exception while processing your request. Please contact the maintainers.")
 
 
-def add_routes(app, engine):
+def add_routes(app: FastAPI, engine: Engine):
+    """ Add routes to the FastAPI application """
+
     @app.get("/", response_class=HTMLResponse)
     def home() -> str:
         """ Provides a redirect page to the docs. """
@@ -122,7 +124,7 @@ def add_routes(app, engine):
                     ).all()
                 ]
         except Exception as e:
-            _wrap_as_http_exception(e)
+            raise _wrap_as_http_exception(e)
 
     @app.get("/dataset/{identifier}")
     def get_dataset(identifier: str) -> dict:
@@ -143,7 +145,7 @@ def add_routes(app, engine):
 
                 return {**dataset_json, **dataset.to_dict(depth=1)}
         except Exception as e:
-            _wrap_as_http_exception(e)
+            raise _wrap_as_http_exception(e)
 
     @app.post("/register/dataset/")
     def register_dataset(
@@ -176,7 +178,7 @@ def add_routes(app, engine):
             if isinstance(e, IntegrityError):
                 raise HTTPException(status_code=409, detail="Duplicate entry.")
             else:
-                _wrap_as_http_exception(e)
+                raise _wrap_as_http_exception(e)
 
     @app.get("/publications")
     def list_publications(pagination: Pagination = Depends(Pagination)) -> list[dict]:
@@ -192,7 +194,7 @@ def add_routes(app, engine):
                     ).all()
                 ]
         except Exception as e:
-            _wrap_as_http_exception(e)
+            raise _wrap_as_http_exception(e)
 
     @app.get("/publication/{identifier}")
     def get_publication(identifier: str) -> dict:
@@ -206,18 +208,22 @@ def add_routes(app, engine):
                                         detail=f"Publication '{identifier}' not found in the database.")
                 return publication.to_dict(depth=1)
         except Exception as e:
-            _wrap_as_http_exception(e)
+            raise _wrap_as_http_exception(e)
 
 
-def create_app():
+def create_app() -> FastAPI:
+    """ Create the FastAPI application, complete with routes. """
     app = FastAPI()
     args = _parse_args()
-    engine_ = _populated_engine(args)
-    add_routes(app, engine_)
+    engine = _engine(args.rebuild_db)
+    if args.populate in ["example", "openml"]:
+        populate_database(engine, data=args.populate, only_if_empty=True)
+    add_routes(app, engine)
     return app
 
 
 def main():
+    """ Run the application. Placed in a separate function, to avoid having global variables """
     args = _parse_args()
     uvicorn.run("main:create_app", host="0.0.0.0", reload=args.reload, factory=True)
 

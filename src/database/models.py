@@ -78,8 +78,8 @@ class Publication(Base):
     """ Any publication. """
     __tablename__ = "publications"
 
-    title: Mapped[str] = mapped_column(String(250))
-    url: Mapped[str] = mapped_column(String(250), unique=True)
+    title: Mapped[str] = mapped_column(String(250), nullable=False)
+    url: Mapped[str] = mapped_column(String(250), nullable=False)
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     datasets: Mapped[list["Dataset"]] = relationship(
         default_factory=list,

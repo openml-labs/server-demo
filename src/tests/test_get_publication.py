@@ -1,15 +1,18 @@
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session
+from starlette.testclient import TestClient
 
 from database.models import Publication, Dataset
 
 
-def test_happy_path(engine, client):
+def test_happy_path(client: TestClient, engine: Engine):
     datasets = [Dataset(name="dset1", platform="openml", platform_specific_identifier="1"),
                 Dataset(name="dset1", platform="other_platform", platform_specific_identifier="1"),
                 ]
     publications = [Publication(title="Title 1", url="https://test.test", datasets=datasets),
                     Publication(title="Title 2", url="https://test.test2", datasets=datasets)]
     with Session(engine) as session:
+        # Populate database
         session.add_all(datasets)
         session.add_all(publications)
         session.commit()
@@ -25,9 +28,10 @@ def test_happy_path(engine, client):
     assert len(response_json) == 4
 
 
-def test_publication_not_found(engine, client):
+def test_publication_not_found(client: TestClient, engine: Engine):
     publications = [Publication(title="Title 1", url="https://test.test", datasets=[])]
     with Session(engine) as session:
+        # Populate database
         session.add_all(publications)
         session.commit()
     response = client.get("/publication/2")  # Note that only publication 1 exists
