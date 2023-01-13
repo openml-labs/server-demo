@@ -55,7 +55,10 @@ def test_duplicated_dataset(client: TestClient, engine: Engine):
         json={"name": "dset1", "platform": "openml", "platform_identifier": "1"},
     )
     assert response.status_code == 409
-    assert response.json()["detail"] == "Duplicate entry."
+    assert (
+        response.json()["detail"] == "There already exists a dataset with the same platform "
+        "and name, with id=1."
+    )
 
 
 def test_missing_value(client: TestClient, engine: Engine):

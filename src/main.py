@@ -180,13 +180,22 @@ def add_routes(app: FastAPI, engine: Engine):
                     name=name, platform=platform, platform_specific_identifier=platform_identifier
                 )
                 session.add(new_dataset)
-                session.commit()
+                try:
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+                    query = select(Dataset).where(
+                        Dataset.platform == platform and Dataset.name == name
+                    )
+                    existing_dataset = session.scalars(query).first()
+                    raise HTTPException(
+                        status_code=409,
+                        detail="There already exists a dataset with the same "
+                        f"platform and name, with id={existing_dataset.id}.",
+                    )
                 return new_dataset.to_dict(depth=1)
         except Exception as e:
-            if isinstance(e, IntegrityError):
-                raise HTTPException(status_code=409, detail="Duplicate entry.")
-            else:
-                raise _wrap_as_http_exception(e)
+            raise _wrap_as_http_exception(e)
 
     @app.get("/publications")
     def list_publications(pagination: Pagination = Depends(Pagination)) -> list[dict]:
