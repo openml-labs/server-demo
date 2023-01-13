@@ -9,16 +9,20 @@ from database.models import Dataset
 
 
 def fetch_dataset(dataset: Dataset) -> dict:
-    """ Retrieve dataset meta-data and dataset characteristics from OpenML. """
+    """Retrieve dataset meta-data and dataset characteristics from OpenML."""
     identifier = dataset.platform_specific_identifier
     url = f"https://www.openml.org/api/v1/json/data/{identifier}"
     response = requests.get(url)
     if not response.ok:
         code = response.status_code
-        if code == 412 and response.json()['error']['message'] == "Unknown dataset":
+        if code == 412 and response.json()["error"]["message"] == "Unknown dataset":
             code = 404  # TODO(Jos/Pieter): Shouldn't this be a 404 in OpenML?
-        raise HTTPException(status_code=code,
-                            detail=f"Error while fetching data from OpenML: '{response.json()['error']['message']}'")
+        raise HTTPException(
+            status_code=code,
+            detail=(
+                f"Error while fetching data from OpenML: '{response.json()['error']['message']}'"
+            ),
+        )
     dataset_json = response.json()["data_set_description"]
 
     # Here we can format the response into some standardized way, maybe this includes some
@@ -26,9 +30,11 @@ def fetch_dataset(dataset: Dataset) -> dict:
     url = f"https://www.openml.org/api/v1/json/data/qualities/{identifier}"
     response = requests.get(url)
     if not response.ok:
-        msg = response.json()['error']['message']
-        raise HTTPException(status_code=response.status_code,
-                            detail=f"Error while fetching data qualities from OpenML: '{msg}'")
+        msg = response.json()["error"]["message"]
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"Error while fetching data qualities from OpenML: '{msg}'",
+        )
 
     qualities_json = {
         quality["name"]: quality["value"]
@@ -41,7 +47,7 @@ def fetch_dataset(dataset: Dataset) -> dict:
         "file_url": dataset_json["url"],
         "number_of_samples": _as_int(qualities_json["NumberOfInstances"]),
         "number_of_features": _as_int(qualities_json["NumberOfFeatures"]),
-        "number_of_classes": _as_int(qualities_json.get("NumberOfClasses")),
+        "number_of_classes": _as_int(qualities_json["NumberOfClasses"]),
     }
 
 

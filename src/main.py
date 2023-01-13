@@ -1,7 +1,8 @@
 """
 Defines Rest API endpoints.
 
-Note: order matters for overloaded paths (https://fastapi.tiangolo.com/tutorial/path-params/#order-matters).
+Note: order matters for overloaded paths
+(https://fastapi.tiangolo.com/tutorial/path-params/#order-matters).
 """
 import argparse
 import tomllib
@@ -21,9 +22,7 @@ from database.setup import connect_to_database, populate_database
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Please refer to the README."
-    )
+    parser = argparse.ArgumentParser(description="Please refer to the README.")
     parser.add_argument(
         "--rebuild-db",
         default="only-if-empty",
@@ -46,7 +45,8 @@ def _parse_args() -> argparse.Namespace:
 
 def _engine(rebuild_db: str) -> Engine:
     """
-    Return a SqlAlchemy engine, backed by the MySql connection as configured in the configuration file.
+    Return a SqlAlchemy engine, backed by the MySql connection as configured in the configuration
+    file.
     """
     with open("config.toml", "rb") as fh:
         config = tomllib.load(fh)
@@ -59,7 +59,7 @@ def _engine(rebuild_db: str) -> Engine:
 
     db_url = f"mysql://{username}:{password}@{host}:{port}/{database}"
 
-    delete_before_create = (rebuild_db == "always")
+    delete_before_create = rebuild_db == "always"
     return connect_to_database(db_url, delete_first=delete_before_create)
 
 
@@ -67,19 +67,24 @@ def _wrap_as_http_exception(exception: Exception) -> HTTPException:
     if isinstance(exception, HTTPException):
         return exception
 
-    # This is an unexpected error. A mistake on our part. End users should not be informed about details of problems
-    # they are not expected to fix, so we give a generic response and log the error.
+    # This is an unexpected error. A mistake on our part. End users should not be informed about
+    # details of problems they are not expected to fix, so we give a generic response and log the
+    # error.
     traceback.print_exc()
-    return HTTPException(status_code=500,
-                         detail="Unexpected exception while processing your request. Please contact the maintainers.")
+    return HTTPException(
+        status_code=500,
+        detail=(
+            "Unexpected exception while processing your request. Please contact the maintainers."
+        ),
+    )
 
 
 def add_routes(app: FastAPI, engine: Engine):
-    """ Add routes to the FastAPI application """
+    """Add routes to the FastAPI application"""
 
     @app.get("/", response_class=HTMLResponse)
     def home() -> str:
-        """ Provides a redirect page to the docs. """
+        """Provides a redirect page to the docs."""
         return """
         <!DOCTYPE html>
         <html>
@@ -92,18 +97,19 @@ def add_routes(app: FastAPI, engine: Engine):
         </html>
         """
 
-    # Multiple endpoints share the same set of parameters, we define a class for easy re-use of dependencies:
-    # https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/?h=depends#classes-as-dependencies
+    # Multiple endpoints share the same set of parameters, we define a class for easy re-use of
+    # dependencies:
+    # https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/?h=depends#classes-as-dependencies # noqa
     class Pagination(BaseModel):
         offset: int = 0
         limit: int = 100
 
     @app.get("/datasets/")
     def list_datasets(
-            platforms: list[str] | None = Query(default=[]),
-            pagination: Pagination = Depends(Pagination),
+        platforms: list[str] | None = Query(default=[]),
+        pagination: Pagination = Depends(Pagination),
     ) -> list[dict]:
-        """ Lists all datasets registered with AIoD.
+        """Lists all datasets registered with AIoD.
 
         Query Parameter
         ------
@@ -128,20 +134,24 @@ def add_routes(app: FastAPI, engine: Engine):
 
     @app.get("/dataset/{identifier}")
     def get_dataset(identifier: str) -> dict:
-        """ Retrieve all meta-data for a specific dataset. """
+        """Retrieve all meta-data for a specific dataset."""
         try:
             with Session(engine) as session:
                 query = select(Dataset).where(Dataset.id == identifier)
                 dataset = session.scalars(query).first()
                 if not dataset:
-                    raise HTTPException(status_code=404, detail=f"Dataset '{identifier}' not found in the database.")
-                    # TODO(Jos / Pieter): What if the dataset is added to OpenML after our initialization? And why do we
-                    # have a local db?
+                    raise HTTPException(
+                        status_code=404, detail=f"Dataset '{identifier}' not found in the database."
+                    )
+                    # TODO(Jos / Pieter): What if the dataset is added to OpenML after our
+                    # initialization? And why do we # have a local db?
                 if dataset.platform == "openml":
                     dataset_json = openml.fetch_dataset(dataset)
                 else:
-                    raise HTTPException(status_code=501,
-                                        detail=f"No connector for platform '{dataset.platform}' available.")
+                    raise HTTPException(
+                        status_code=501,
+                        detail=f"No connector for platform '{dataset.platform}' available.",
+                    )
 
                 return {**dataset_json, **dataset.to_dict(depth=1)}
         except Exception as e:
@@ -149,11 +159,11 @@ def add_routes(app: FastAPI, engine: Engine):
 
     @app.post("/register/dataset/")
     def register_dataset(
-            name: str = Body(min_length=1, max_length=50),
-            platform: str = Body(min_length=1, max_length=30),
-            platform_identifier: str = Body(min_length=1, max_length=100)
+        name: str = Body(min_length=1, max_length=50),
+        platform: str = Body(min_length=1, max_length=30),
+        platform_identifier: str = Body(min_length=1, max_length=100),
     ) -> dict:
-        """ Register a dataset with AIoD.
+        """Register a dataset with AIoD.
 
         Expects a JSON body with the following key/values:
          - name (max 150 characters): Name of the dataset.
@@ -167,9 +177,7 @@ def add_routes(app: FastAPI, engine: Engine):
         try:
             with Session(engine) as session:
                 new_dataset = Dataset(
-                    name=name,
-                    platform=platform,
-                    platform_specific_identifier=platform_identifier
+                    name=name, platform=platform, platform_specific_identifier=platform_identifier
                 )
                 session.add(new_dataset)
                 session.commit()
@@ -182,15 +190,13 @@ def add_routes(app: FastAPI, engine: Engine):
 
     @app.get("/publications")
     def list_publications(pagination: Pagination = Depends(Pagination)) -> list[dict]:
-        """ Lists all publications registered with AIoD. """
+        """Lists all publications registered with AIoD."""
         try:
             with Session(engine) as session:
                 return [
                     publication.to_dict(depth=0)
                     for publication in session.scalars(
-                        select(Publication)
-                        .offset(pagination.offset)
-                        .limit(pagination.limit)
+                        select(Publication).offset(pagination.offset).limit(pagination.limit)
                     ).all()
                 ]
         except Exception as e:
@@ -198,21 +204,23 @@ def add_routes(app: FastAPI, engine: Engine):
 
     @app.get("/publication/{identifier}")
     def get_publication(identifier: str) -> dict:
-        """ Retrieves all information for a specific publication registered with AIoD. """
+        """Retrieves all information for a specific publication registered with AIoD."""
         try:
             with Session(engine) as session:
                 query = select(Publication).where(Publication.id == identifier)
                 publication = session.scalars(query).first()
                 if not publication:
-                    raise HTTPException(status_code=404,
-                                        detail=f"Publication '{identifier}' not found in the database.")
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Publication '{identifier}' not found in the database.",
+                    )
                 return publication.to_dict(depth=1)
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
 
 def create_app() -> FastAPI:
-    """ Create the FastAPI application, complete with routes. """
+    """Create the FastAPI application, complete with routes."""
     app = FastAPI()
     args = _parse_args()
     engine = _engine(args.rebuild_db)
@@ -223,7 +231,7 @@ def create_app() -> FastAPI:
 
 
 def main():
-    """ Run the application. Placed in a separate function, to avoid having global variables """
+    """Run the application. Placed in a separate function, to avoid having global variables"""
     args = _parse_args()
     uvicorn.run("main:create_app", host="0.0.0.0", reload=args.reload, factory=True)
 

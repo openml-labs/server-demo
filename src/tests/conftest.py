@@ -16,9 +16,10 @@ def engine() -> Iterator[Engine]:
     Create a SqlAlchemy engine for tests, backed by a temporary sqlite file.
     """
     temporary_file = tempfile.NamedTemporaryFile()
-    engine = create_engine(f'sqlite:///{temporary_file.name}')
+    engine = create_engine(f"sqlite:///{temporary_file.name}")
     Base.metadata.create_all(engine)
-    yield engine  # Yielding is essential, the temporary file will be closed after the engine is used
+    # Yielding is essential, the temporary file will be closed after the engine is used
+    yield engine
 
 
 @pytest.fixture
