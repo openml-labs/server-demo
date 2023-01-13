@@ -1,3 +1,4 @@
+import copy
 import json
 
 import responses
@@ -15,13 +16,14 @@ def test_happy_path(client: TestClient, engine: Engine):
     dataset_description = Dataset(
         name="anneal", platform="openml", platform_specific_identifier="1"
     )
-
+    with Session(engine) as session:
+        # Populate database.
+        # Deepcopy necessary because SqlAlchemy changes the instance so that accessing the
+        # platform_specific_identifier is not possible anymore
+        session.add(copy.deepcopy(dataset_description))
+        session.commit()
     with responses.RequestsMock() as mocked_requests:
         _mock_normal_responses(mocked_requests, dataset_description)
-        with Session(engine) as session:
-            # Populate database
-            session.add(dataset_description)
-            session.commit()
         response = client.get("/dataset/1")
     assert response.status_code == 200
     response_json = response.json()
