@@ -1,6 +1,7 @@
 #/bin/bash
 
-APP_ROOT="$(dirname "$(dirname "$(readlink -fm "$0")")")"
+SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)"
+APP_ROOT="$(dirname $SCRIPT_PATH)"
 DATA_DIR="${APP_ROOT}/data/mysql"
 
 docker run \

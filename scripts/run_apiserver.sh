@@ -1,10 +1,8 @@
 #/bin/bash
 
-
-
-APP_ROOT="$(dirname "$(dirname "$(readlink -fm "$0")")")"
+SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)"
+APP_ROOT="$(dirname $SCRIPT_PATH)"
 SRC_PATH="${APP_ROOT}/src"
-
 
 docker run \
 	--network sql-network\
