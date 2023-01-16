@@ -7,6 +7,16 @@ WORKDIR /app
 
 COPY ./pyproject.toml /app/pyproject.toml
 
+# Create a non-root user for security
+RUN groupadd -r apprunner && \
+   useradd -mg apprunner apprunner \
+   && chown -R apprunner:apprunner /app
+USER apprunner:apprunner
+
+# Add ~/.local/bin to the PATH. Not necessary, but can be useful for debugging and bypasses pip
+# warnings.
+ENV PATH="${PATH}:/home/apprunner/.local/bin"
+
 RUN pip install .
 
 COPY ./src /app
