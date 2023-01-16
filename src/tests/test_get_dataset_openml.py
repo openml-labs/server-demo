@@ -60,6 +60,12 @@ def test_dataset_not_found_in_openml(client: TestClient, engine: Engine):
     dataset_description = Dataset(
         name="anneal", platform="openml", platform_specific_identifier="1"
     )
+    with Session(engine) as session:
+        # Populate database
+        # Deepcopy necessary because SqlAlchemy changes the instance so that accessing the
+        # platform_specific_identifier is not possible anymore
+        session.add(copy.deepcopy(dataset_description))
+        session.commit()
     with responses.RequestsMock() as mocked_requests:
         mocked_requests.add(
             responses.GET,
@@ -67,10 +73,6 @@ def test_dataset_not_found_in_openml(client: TestClient, engine: Engine):
             json={"error": {"code": "111", "message": "Unknown dataset"}},
             status=412,
         )
-        with Session(engine) as session:
-            # Populate database
-            session.add(dataset_description)
-            session.commit()
         response = client.get("/dataset/1")
     assert response.status_code == 404
     assert response.json()["detail"] == "Error while fetching data from OpenML: 'Unknown dataset'"
