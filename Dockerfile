@@ -5,9 +5,9 @@ RUN apt-get update && apt-get -y install python3-dev default-libmysqlclient-dev 
 
 WORKDIR /app
 
-COPY ./requirements.txt /app/requirements.txt
+COPY ./pyproject.toml /app/pyproject.toml
 
-RUN pip install -r requirements.txt
+RUN pip install .
 
 COPY ./src /app
 

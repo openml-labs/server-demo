@@ -106,12 +106,19 @@ We advise creating a virtual environment first and install the dependencies ther
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install .
 ```
 
 Note that the `mysqlclient` dependency requires additional tooling before it can be installed.
 In case this tooling is not already available, please have a look
 at [their installation instructions](https://github.com/PyMySQL/mysqlclient#install).
+
+For development, you will need to install the optional dependencies as well:
+
+```bash
+source venv/bin/activate
+python -m pip install ".[dev]"
+```
 
 After installing the dependencies you can start the server:
 
@@ -121,6 +128,9 @@ python main.py --reload
 ```
 
 The `--reload` argument will automatically restart the app if changes are made to the source files.
+
+
+
 
 ### Populating the Database
 

@@ -1,5 +1,0 @@
-# This file is for dependencies that are only needed to run the tests. You do not need them to run the application
-pytest
-responses
-starlette
-pre-commit
