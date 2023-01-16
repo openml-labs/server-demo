@@ -16,7 +16,7 @@ def fetch_dataset(dataset: Dataset) -> dict:
     if not response.ok:
         code = response.status_code
         if code == 412 and response.json()["error"]["message"] == "Unknown dataset":
-            code = 404  # TODO(Jos/Pieter): Shouldn't this be a 404 in OpenML?
+            code = 404
         raise HTTPException(
             status_code=code,
             detail=(

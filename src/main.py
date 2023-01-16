@@ -143,8 +143,6 @@ def add_routes(app: FastAPI, engine: Engine):
                     raise HTTPException(
                         status_code=404, detail=f"Dataset '{identifier}' not found in the database."
                     )
-                    # TODO(Jos / Pieter): What if the dataset is added to OpenML after our
-                    # initialization? And why do we # have a local db?
                 if dataset.platform == "openml":
                     dataset_json = openml.fetch_dataset(dataset)
                 else:
