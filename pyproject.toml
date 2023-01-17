@@ -1,0 +1,29 @@
+[project]
+name = "ai4eu_server_demo"
+description = "A containerized demo application for AI on demand (previously AI4EU) "
+version = "0.1.20230116"
+authors = [
+    { name = "Pieter Gijsbers", email = "p.gijsbers@tue.nl"},
+    { name = "Jos van der Velde", email = "j.d.v.d.velde@tue.nl"},
+]
+dependencies = [
+    "sqlalchemy==2.0.0b4",
+    "fastapi",
+    "uvicorn",
+    "requests",
+    "mysqlclient",
+    "pydantic",
+    "httpx"
+]
+readme = "README.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pre-commit",
+    "responses",
+    "starlette"
+]
+
+[tool.black]
+line-length = 100

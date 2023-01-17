@@ -5,11 +5,20 @@ RUN apt-get update && apt-get -y install python3-dev default-libmysqlclient-dev 
 
 WORKDIR /app
 
-COPY ./requirements.txt /app/requirements.txt
+COPY ./pyproject.toml /app/pyproject.toml
 
-RUN pip install -r requirements.txt
+# Create a non-root user for security
+RUN groupadd -r apprunner && \
+   useradd -mg apprunner apprunner \
+   && chown -R apprunner:apprunner /app
+USER apprunner:apprunner
+
+# Add ~/.local/bin to the PATH. Not necessary, but can be useful for debugging and bypasses pip
+# warnings.
+ENV PATH="${PATH}:/home/apprunner/.local/bin"
+
+RUN pip install .
 
 COPY ./src /app
 
-#ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0"]
 ENTRYPOINT ["python", "main.py"]
