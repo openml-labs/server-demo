@@ -162,7 +162,9 @@ def _link_datasets_with_publications(datasets, publications):
         42769,
         43072,
     ]
-    benchmark_datasets = [d for d in datasets if d.id in benchmark_dataset_ids]
+    benchmark_datasets = [
+        d for d in datasets if int(d.platform_specific_identifier) in benchmark_dataset_ids
+    ]
     benchmark_publications = [p for p in publications if p.title == "AMLB: an AutoML Benchmark"]
     higgs_title = "Searching for exotic particles in high-energy physics with deep learning"
     higgs_publication = [p for p in publications if p.title == higgs_title]

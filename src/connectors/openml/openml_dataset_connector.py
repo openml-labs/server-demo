@@ -4,7 +4,6 @@ and how to convert the OpenML response to some agreed AIoD format.
 """
 import requests
 from fastapi import HTTPException
-from requests import RequestException
 
 from connectors.abstract.dataset_connector import DatasetConnector, DatasetMeta
 from database.models import Dataset
@@ -55,23 +54,23 @@ class OpenMlDatasetConnector(DatasetConnector):
         )
 
     def fetch_all(self) -> list[Dataset]:
-        datasets = []
-        for i in range(50_000):
-            url = f"https://www.openml.org/api/v1/json/data/{i}"
-            try:
-                response = requests.get(url)
-                if response.status_code != 200:
-                    continue
-            except RequestException:
-                continue
-
-            dataset = Dataset(
-                name=response.json()["data_set_description"]["name"],
-                platform="openml",
-                platform_specific_identifier=str(i),
+        url = "https://www.openml.org/api/v1/json/data/list"
+        response = requests.get(url)
+        response_json = response.json()
+        if not response.ok:
+            msg = response_json["error"]["message"]
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Error while fetching data from OpenML: '{msg}'",
             )
-            datasets.append(dataset)
-        return datasets
+        return [
+            Dataset(
+                name=dataset_json["name"],
+                platform="openml",
+                platform_specific_identifier=str(dataset_json["did"]),
+            )
+            for dataset_json in response_json["data"]["dataset"]
+        ]
 
 
 def _as_int(v: str) -> int:
