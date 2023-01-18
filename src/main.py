@@ -33,7 +33,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--populate-datasets",
         default="example",
-        choices=["nothing", "example", "openml"],
+        choices=["nothing", "example", "huggingface", "openml"],
         help="Determines if the database gets populated with datasets.",
     )
     parser.add_argument(
@@ -235,7 +235,10 @@ def create_app() -> FastAPI:
     engine = _engine(args.rebuild_db)
     if args.populate in ["example", "openml"]:
         populate_database(
-            engine, platform_data=args.populate, platform_publications="example", only_if_empty=True
+            engine,
+            platform_data=args.populate.lower(),
+            platform_publications="example",
+            only_if_empty=True,
         )
     add_routes(app, engine)
     return app

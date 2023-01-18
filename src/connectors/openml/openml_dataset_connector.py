@@ -66,7 +66,7 @@ class OpenMlDatasetConnector(DatasetConnector):
         return [
             Dataset(
                 name=dataset_json["name"],
-                platform="openml",
+                platform=self.platform(),
                 platform_specific_identifier=str(dataset_json["did"]),
             )
             for dataset_json in response_json["data"]["dataset"]

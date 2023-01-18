@@ -89,87 +89,26 @@ def populate_database(
 def _link_datasets_with_publications(datasets, publications):
     """Linking some publications with some datasets. Temporary function to show the
     possibilities."""
+    # fmt: off
     benchmark_dataset_ids = [
-        181,
-        1111,
-        1596,
-        1457,
-        40981,
-        40983,
-        23517,
-        1489,
-        31,
-        40982,
-        41138,
-        41163,
-        41164,
-        41143,
-        1169,
-        41167,
-        41147,
-        41158,
-        1487,
-        54,
-        41144,
-        41145,
-        41156,
-        41157,
-        41168,
-        4541,
-        1515,
-        188,
-        1464,
-        1494,
-        1468,
-        1049,
-        23,
-        40975,
-        12,
-        1067,
-        40984,
-        40670,
-        3,
-        40978,
-        4134,
-        40701,
-        1475,
-        4538,
-        4534,
-        41146,
-        41142,
-        40498,
-        40900,
-        40996,
-        40668,
-        4135,
-        1486,
-        41027,
-        1461,
-        1590,
-        41169,
-        41166,
-        41165,
-        40685,
-        41159,
-        41161,
-        41150,
-        41162,
-        42733,
-        42734,
-        42732,
-        42746,
-        42742,
-        42769,
-        43072,
+        181, 1111, 1596, 1457, 40981, 40983, 23517, 1489, 31, 40982, 41138, 41163, 41164, 41143,
+        1169, 41167, 41147, 41158, 1487, 54, 41144, 41145, 41156, 41157, 41168, 4541, 1515, 188,
+        1464, 1494, 1468, 1049, 23, 40975, 12, 1067, 40984, 40670, 3, 40978, 4134, 40701, 1475,
+        4538, 4534, 41146, 41142, 40498, 40900, 40996, 40668, 4135, 1486, 41027, 1461, 1590, 41169,
+        41166, 41165, 40685, 41159, 41161, 41150, 41162, 42733, 42734, 42732, 42746, 42742, 42769,
+        43072
     ]
+    # fmt: on
     benchmark_datasets = [
-        d for d in datasets if int(d.platform_specific_identifier) in benchmark_dataset_ids
+        d
+        for d in datasets
+        if d.platform == "openml" and int(d.platform_specific_identifier) in benchmark_dataset_ids
     ]
     benchmark_publications = [p for p in publications if p.title == "AMLB: an AutoML Benchmark"]
     higgs_title = "Searching for exotic particles in high-energy physics with deep learning"
     higgs_publication = [p for p in publications if p.title == higgs_title]
     for publication in higgs_publication:
-        publication.datasets = [d for d in datasets if d.name == "Higgs"]
+        publication.datasets = [d for d in datasets if d.platform == "openml" and d.name == "Higgs"]
     for publication in benchmark_publications:
         publication.datasets = benchmark_datasets
     return datasets, publications
