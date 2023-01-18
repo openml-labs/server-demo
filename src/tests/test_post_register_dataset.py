@@ -1,4 +1,4 @@
-import typing  # noqa (flake8 raises incorrect 'Module imported but unused' error)
+import typing  # noqa:F401 (flake8 raises incorrect 'Module imported but unused' error)
 
 import pytest
 from sqlalchemy import Engine

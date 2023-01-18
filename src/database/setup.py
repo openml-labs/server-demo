@@ -1,13 +1,11 @@
 """
 Utility functions for initializing the database and tables through SQLAlchemy.
 """
-from typing import Tuple
 
-import requests
-from requests import RequestException
 from sqlalchemy import Engine, text, create_engine, select
 from sqlalchemy.orm import Session
 
+import connectors
 from .models import Base, Dataset, Publication
 
 
@@ -44,20 +42,38 @@ def connect_to_database(
     return engine
 
 
-def populate_database(engine: Engine, only_if_empty: bool = True, data: str = "example"):
-    """Adds some data to the Dataset and Publication tables.
+def populate_database(
+    engine: Engine,
+    only_if_empty: bool = True,
+    platform_data: str = "example",
+    platform_publications="example",
+):
+    """Add some data to the Dataset and Publication tables.
 
-    data: str (default="example")
-        One of "example" or "openml".
+    platform_data: str (default="example"): One of "nothing", "example" or "openml".
+    platform_publications: str (default="example"): One of "nothing" or "example".
     """
-    match data:
-        case "example":
-            datasets, publications = get_example_data()
-        case "openml":
-            datasets, publications = get_openml_data()
-        case _:
-            raise ValueError(f"`data` must be one of 'example' or 'openml': {data=}")
 
+    if platform_data == "nothing":
+        datasets = []
+    else:
+        dataset_connector = connectors.dataset_connectors.get(platform_data, None)
+        if dataset_connector is None:
+            possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
+            msg = f"{platform_data=}, but must be one of {possibilities}"
+            raise NotImplementedError(msg)
+        datasets = dataset_connector.fetch_all()
+    if platform_publications == "nothing":
+        publications = []
+    else:
+        publication_connector = connectors.publication_connectors.get(platform_publications, None)
+        if publication_connector is None:
+            possibilities = ", ".join(f"`{c}`" for c in connectors.publication_connectors.keys())
+            msg = f"{platform_publications=}, but must be one of {possibilities}"
+            raise NotImplementedError(msg)
+        publications = publication_connector.fetch_all()
+
+    _link_datasets_with_publications(datasets, publications)
     with Session(engine) as session:
         data_exists = (
             session.scalars(select(Publication)).first() or session.scalars(select(Dataset)).first()
@@ -70,38 +86,9 @@ def populate_database(engine: Engine, only_if_empty: bool = True, data: str = "e
         session.commit()
 
 
-def get_example_data() -> Tuple[list[Dataset], list[Publication]]:
-    """Generate some toy data: 2 datasets and 2 publications."""
-    datasets = [
-        Dataset(
-            name="Higgs",
-            platform="openml",
-            platform_specific_identifier="42769",
-        ),
-        Dataset(
-            name="porto-seguro",
-            platform="openml",
-            platform_specific_identifier="42742",
-        ),
-    ]
-
-    publications = [
-        Publication(
-            title="AMLB: an AutoML Benchmark",
-            url="https://arxiv.org/abs/2207.12560",
-            datasets=datasets,
-        ),
-        Publication(
-            title="Searching for exotic particles in high-energy physics with deep learning",
-            url="https://www.nature.com/articles/ncomms5308",
-            datasets=[datasets[0]],
-        ),
-    ]
-    return datasets, publications
-
-
-def get_openml_data() -> Tuple[list[Dataset], list[Publication]]:
-    """Generate data based on OpenML datasets and the AutoML benchmark."""
+def _link_datasets_with_publications(datasets, publications):
+    """Linking some publications with some datasets. Temporary function to show the
+    possibilities."""
     benchmark_dataset_ids = [
         181,
         1111,
@@ -175,37 +162,12 @@ def get_openml_data() -> Tuple[list[Dataset], list[Publication]]:
         42769,
         43072,
     ]
-    benchmark_datasets = []
-    datasets = []
-
-    for i in range(50_000):
-        url = f"https://www.openml.org/api/v1/json/data/{i}"
-        try:
-            response = requests.get(url)
-            if response.status_code != 200:
-                continue
-        except RequestException:
-            continue
-
-        dataset = Dataset(
-            name=response.json()["data_set_description"]["name"],
-            platform="openml",
-            platform_specific_identifier=str(i),
-        )
-        datasets.append(dataset)
-        if i in benchmark_dataset_ids:
-            benchmark_datasets.append(dataset)
-
-    publications = [
-        Publication(
-            title="AMLB: an AutoML Benchmark",
-            url="https://arxiv.org/abs/2207.12560",
-            datasets=benchmark_datasets,
-        ),
-        Publication(
-            title="Searching for exotic particles in high-energy physics with deep learning",
-            url="https://www.nature.com/articles/ncomms5308",
-            datasets=[dataset for dataset in datasets if dataset.name == "Higgs"],
-        ),
-    ]
+    benchmark_datasets = [d for d in datasets if d.id in benchmark_dataset_ids]
+    benchmark_publications = [p for p in publications if p.title == "AMLB: an AutoML Benchmark"]
+    higgs_title = "Searching for exotic particles in high-energy physics with deep learning"
+    higgs_publication = [p for p in publications if p.title == higgs_title]
+    for publication in higgs_publication:
+        publication.datasets = [d for d in datasets if d.name == "Higgs"]
+    for publication in benchmark_publications:
+        publication.datasets = benchmark_datasets
     return datasets, publications

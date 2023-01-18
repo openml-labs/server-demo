@@ -7,7 +7,7 @@ See also:
 Note: because we use MySQL in the demo, we need to explicitly set maximum string lengths.
 """
 import dataclasses
-import typing  # noqa (flake8 raises incorrect 'Module imported but unused' error)
+import typing  # noqa:F401 (flake8 raises incorrect 'Module imported but unused' error)
 
 from sqlalchemy import ForeignKey, Table, Column, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDataclass, relationship

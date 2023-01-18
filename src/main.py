@@ -7,6 +7,7 @@ Note: order matters for overloaded paths
 import argparse
 import tomllib
 import traceback
+from dataclasses import asdict
 
 import uvicorn
 from fastapi import Query, Body, Depends, FastAPI, HTTPException
@@ -16,7 +17,7 @@ from sqlalchemy import select, Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from connectors import openml
+import connectors
 from database.models import Dataset, Publication
 from database.setup import connect_to_database, populate_database
 
@@ -30,10 +31,10 @@ def _parse_args() -> argparse.Namespace:
         help="Determines if the database is recreated.",
     )
     parser.add_argument(
-        "--populate",
+        "--populate-datasets",
         default="example",
         choices=["nothing", "example", "openml"],
-        help="Determines if the database gets populated with data.",
+        help="Determines if the database gets populated with datasets.",
     )
     parser.add_argument(
         "--reload",
@@ -143,15 +144,16 @@ def add_routes(app: FastAPI, engine: Engine):
                     raise HTTPException(
                         status_code=404, detail=f"Dataset '{identifier}' not found in the database."
                     )
-                if dataset.platform == "openml":
-                    dataset_json = openml.fetch_dataset(dataset)
+                connector = connectors.dataset_connectors.get(dataset.platform.lower(), None)
+                if connector is not None:
+                    dataset_meta = connector.fetch(dataset)
                 else:
                     raise HTTPException(
                         status_code=501,
                         detail=f"No connector for platform '{dataset.platform}' available.",
                     )
 
-                return {**dataset_json, **dataset.to_dict(depth=1)}
+                return {**asdict(dataset_meta), **dataset.to_dict(depth=1)}
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
@@ -232,7 +234,9 @@ def create_app() -> FastAPI:
     args = _parse_args()
     engine = _engine(args.rebuild_db)
     if args.populate in ["example", "openml"]:
-        populate_database(engine, data=args.populate, only_if_empty=True)
+        populate_database(
+            engine, platform_data=args.populate, platform_publications="example", only_if_empty=True
+        )
     add_routes(app, engine)
     return app
 
