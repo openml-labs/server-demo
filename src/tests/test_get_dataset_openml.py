@@ -24,7 +24,7 @@ def test_happy_path(client: TestClient, engine: Engine):
         session.commit()
     with responses.RequestsMock() as mocked_requests:
         _mock_normal_responses(mocked_requests, dataset_description)
-        response = client.get("/dataset/1")
+        response = client.get("/dataset/openml/1")
     assert response.status_code == 200
     response_json = response.json()
 
@@ -51,9 +51,9 @@ def test_dataset_not_found_in_local_db(client: TestClient, engine: Engine):
         # Populate database
         session.add(dataset_description)
         session.commit()
-    response = client.get("/dataset/2")  # Note that only dataset 1 exists
+    response = client.get("/dataset/openml/2")  # Note that only dataset 1 exists
     assert response.status_code == 404
-    assert response.json()["detail"] == "Dataset '2' not found in the database."
+    assert response.json()["detail"] == "Dataset '2' of 'openml' not found in the database."
 
 
 def test_dataset_not_found_in_openml(client: TestClient, engine: Engine):
@@ -73,7 +73,7 @@ def test_dataset_not_found_in_openml(client: TestClient, engine: Engine):
             json={"error": {"code": "111", "message": "Unknown dataset"}},
             status=412,
         )
-        response = client.get("/dataset/1")
+        response = client.get("/dataset/openml/1")
     assert response.status_code == 404
     assert response.json()["detail"] == "Error while fetching data from OpenML: 'Unknown dataset'"
 

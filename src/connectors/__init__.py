@@ -6,12 +6,13 @@ from .example.example_dataset_connector import ExampleDatasetConnector
 from .example.example_publication_connector import ExamplePublicationConnector
 from .huggingface.huggingface_dataset_connector import HuggingFaceDatasetConnector
 from .openml.openml_dataset_connector import OpenMlDatasetConnector
+from .platforms import Platform  # noqa:F401
 
 dataset_connectors = {
     c.platform(): c
     for c in (ExampleDatasetConnector(), OpenMlDatasetConnector(), HuggingFaceDatasetConnector())
-}  # type: typing.Dict[str, DatasetConnector]
+}  # type: typing.Dict[Platform, DatasetConnector]
 
 publication_connectors = {
     p.platform(): p for p in (ExamplePublicationConnector(),)
-}  # type: typing.Dict[str, PublicationConnector]
+}  # type: typing.Dict[Platform, PublicationConnector]

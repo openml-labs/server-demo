@@ -13,11 +13,12 @@ import uvicorn
 from fastapi import Query, Body, Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from sqlalchemy import select, Engine
+from sqlalchemy import select, Engine, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import connectors
+from connectors import Platform
 from database.models import Dataset, Publication
 from database.setup import connect_to_database, populate_database
 
@@ -33,7 +34,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--populate-datasets",
         default="example",
-        choices=["nothing", "example", "huggingface", "openml"],
+        choices=["nothing"] + [p.name for p in Platform],
         help="Determines if the database gets populated with datasets.",
     )
     parser.add_argument(
@@ -133,16 +134,23 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/dataset/{identifier}")
-    def get_dataset(identifier: str) -> dict:
+    @app.get("/dataset/{platform}/{identifier}")
+    def get_dataset(platform: str, identifier: str) -> dict:
         """Retrieve all meta-data for a specific dataset."""
         try:
             with Session(engine) as session:
-                query = select(Dataset).where(Dataset.id == identifier)
+                query = select(Dataset).where(
+                    and_(
+                        Dataset.platform_specific_identifier == identifier,
+                        Dataset.platform == platform,
+                    )
+                )
                 dataset = session.scalars(query).first()
                 if not dataset:
                     raise HTTPException(
-                        status_code=404, detail=f"Dataset '{identifier}' not found in the database."
+                        status_code=404,
+                        detail=f"Dataset '{identifier}' of '{platform}' not found "
+                        "in the database.",
                     )
                 connector = connectors.dataset_connectors.get(dataset.platform.lower(), None)
                 if connector is not None:
@@ -150,10 +158,15 @@ def add_routes(app: FastAPI, engine: Engine):
                 else:
                     raise HTTPException(
                         status_code=501,
-                        detail=f"No connector for platform '{dataset.platform}' available.",
+                        detail=f"No connector for platform '{platform}' available.",
                     )
 
-                return {**asdict(dataset_meta), **dataset.to_dict(depth=1)}
+                return {
+                    **asdict(
+                        dataset_meta, dict_factory=lambda x: {k: v for (k, v) in x if v is not None}
+                    ),
+                    **dataset.to_dict(depth=1),
+                }
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
@@ -185,7 +198,7 @@ def add_routes(app: FastAPI, engine: Engine):
                 except IntegrityError:
                     session.rollback()
                     query = select(Dataset).where(
-                        Dataset.platform == platform and Dataset.name == name
+                        and_(Dataset.platform == platform, Dataset.name == name)
                     )
                     existing_dataset = session.scalars(query).first()
                     raise HTTPException(

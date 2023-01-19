@@ -6,12 +6,13 @@ import requests
 from fastapi import HTTPException
 
 from connectors.abstract.dataset_connector import DatasetConnector, DatasetMeta
+from connectors.platforms import Platform
 from database.models import Dataset
 
 
 class OpenMlDatasetConnector(DatasetConnector):
-    def platform(self) -> str:
-        return "openml"
+    def platform(self) -> Platform:
+        return Platform.openml
 
     def fetch(self, dataset: Dataset) -> DatasetMeta:
         identifier = dataset.platform_specific_identifier

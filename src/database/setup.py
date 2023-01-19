@@ -6,6 +6,7 @@ from sqlalchemy import Engine, text, create_engine, select
 from sqlalchemy.orm import Session
 
 import connectors
+from connectors import Platform
 from .models import Base, Dataset, Publication
 
 
@@ -57,7 +58,7 @@ def populate_database(
     if platform_data == "nothing":
         datasets = []
     else:
-        dataset_connector = connectors.dataset_connectors.get(platform_data, None)
+        dataset_connector = connectors.dataset_connectors.get(Platform(platform_data), None)
         if dataset_connector is None:
             possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
             msg = f"{platform_data=}, but must be one of {possibilities}"
@@ -66,7 +67,9 @@ def populate_database(
     if platform_publications == "nothing":
         publications = []
     else:
-        publication_connector = connectors.publication_connectors.get(platform_publications, None)
+        publication_connector = connectors.publication_connectors.get(
+            Platform(platform_publications), None
+        )
         if publication_connector is None:
             possibilities = ", ".join(f"`{c}`" for c in connectors.publication_connectors.keys())
             msg = f"{platform_publications=}, but must be one of {possibilities}"

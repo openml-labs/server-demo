@@ -1,10 +1,11 @@
 from connectors.abstract.dataset_connector import DatasetConnector, DatasetMeta
+from connectors.platforms import Platform
 from database.models import Dataset
 
 
 class ExampleDatasetConnector(DatasetConnector):
-    def platform(self) -> str:
-        return "example"
+    def platform(self) -> Platform:
+        return Platform.example
 
     def fetch(self, dataset: Dataset) -> DatasetMeta:
         return DatasetMeta(
@@ -27,5 +28,20 @@ class ExampleDatasetConnector(DatasetConnector):
                 name="porto-seguro",
                 platform="openml",
                 platform_specific_identifier="42742",
+            ),
+            Dataset(
+                name="rotten_tomatoes config:default split:train",
+                platform="huggingface",
+                platform_specific_identifier="rotten_tomatoes|default|train",
+            ),
+            Dataset(
+                name="rotten_tomatoes config:default split:validation",
+                platform="huggingface",
+                platform_specific_identifier="rotten_tomatoes|default|validation",
+            ),
+            Dataset(
+                name="rotten_tomatoes config:default split:test",
+                platform="huggingface",
+                platform_specific_identifier="rotten_tomatoes|default|test",
             ),
         ]

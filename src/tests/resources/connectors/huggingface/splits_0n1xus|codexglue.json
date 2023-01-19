@@ -1,0 +1,46 @@
+{
+    "splits": [
+        {
+            "dataset": "0n1xus/codexglue",
+            "config": "code-completion-token-py150",
+            "split": "train",
+            "num_bytes": 441358038,
+            "num_examples": 95000
+        },
+        {
+            "dataset": "0n1xus/codexglue",
+            "config": "code-completion-token-py150",
+            "split": "test",
+            "num_bytes": 228741847,
+            "num_examples": 50000
+        },
+        {
+            "dataset": "0n1xus/codexglue",
+            "config": "code-completion-token-py150",
+            "split": "validation",
+            "num_bytes": 27069231,
+            "num_examples": 5000
+        },
+        {
+            "dataset": "0n1xus/codexglue",
+            "config": "code-to-code-trans",
+            "split": "train",
+            "num_bytes": 4306167,
+            "num_examples": 10295
+        },
+        {
+            "dataset": "0n1xus/codexglue",
+            "config": "code-to-code-trans",
+            "split": "test",
+            "num_bytes": 412372,
+            "num_examples": 1000
+        },
+        {
+            "dataset": "0n1xus/codexglue",
+            "config": "code-to-code-trans",
+            "split": "validation",
+            "num_bytes": 221932,
+            "num_examples": 499
+        }
+    ]
+}

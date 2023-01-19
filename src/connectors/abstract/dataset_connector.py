@@ -1,25 +1,26 @@
 import abc
 from dataclasses import dataclass
 
+from connectors.platforms import Platform
 from database.models import Dataset
 
 
 @dataclass
 class DatasetMeta:
     name: str
-    description: str
     file_url: str
     number_of_samples: int
     number_of_features: int
-    number_of_classes: int
+    description: str | None = None
+    number_of_classes: int | None = None
 
 
 class DatasetConnector(abc.ABC):
-    """Abstract class stating which methods are expected on a DatasetConnector"""
+    """For every platform that offers datasets, this DatasetConnector should be implemented."""
 
     @abc.abstractmethod
-    def platform(self) -> str:
-        """The platform name of this connector (e.g. 'openml' or 'huggingface')"""
+    def platform(self) -> Platform:
+        """The platform name of this connector (e.g. openml or huggingface)"""
         pass
 
     @abc.abstractmethod
@@ -29,5 +30,5 @@ class DatasetConnector(abc.ABC):
 
     @abc.abstractmethod
     def fetch_all(self) -> list[Dataset]:
-        """Retrieve all dataset descriptions"""
+        """Retrieve basic information of all datasets"""
         pass
