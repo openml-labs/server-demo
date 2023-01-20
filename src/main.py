@@ -12,12 +12,13 @@ import uvicorn
 from fastapi import Query, Body, Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from sqlalchemy import select, Engine
+from sqlalchemy import select, Engine, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from connectors import openml
-from database.models import Dataset, Publication
+import connectors
+from connectors import Platform
+from database.models import DatasetDescription, Publication
 from database.setup import connect_to_database, populate_database
 
 
@@ -30,10 +31,10 @@ def _parse_args() -> argparse.Namespace:
         help="Determines if the database is recreated.",
     )
     parser.add_argument(
-        "--populate",
+        "--populate-datasets",
         default="example",
-        choices=["nothing", "example", "openml"],
-        help="Determines if the database gets populated with data.",
+        choices=["nothing"] + [p.name for p in Platform],
+        help="Determines if the database gets populated with datasets.",
     )
     parser.add_argument(
         "--reload",
@@ -61,6 +62,22 @@ def _engine(rebuild_db: str) -> Engine:
 
     delete_before_create = rebuild_db == "always"
     return connect_to_database(db_url, delete_first=delete_before_create)
+
+
+def _retrieve_dataset(session, identifier, platform):
+    query = select(DatasetDescription).where(
+        and_(
+            DatasetDescription.platform_specific_identifier == identifier,
+            DatasetDescription.platform == platform,
+        )
+    )
+    dataset = session.scalars(query).first()
+    if not dataset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dataset '{identifier}' of '{platform}' not found " "in the database.",
+        )
+    return dataset
 
 
 def _wrap_as_http_exception(exception: Exception) -> HTTPException:
@@ -118,12 +135,12 @@ def add_routes(app: FastAPI, engine: Engine):
         # For additional information on querying through SQLAlchemy's ORM:
         # https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
         try:
-            platform_filter = Dataset.platform.in_(platforms) if platforms else True
+            platform_filter = DatasetDescription.platform.in_(platforms) if platforms else True
             with Session(engine) as session:
                 return [
                     dataset.to_dict(depth=0)
                     for dataset in session.scalars(
-                        select(Dataset)
+                        select(DatasetDescription)
                         .where(platform_filter)
                         .offset(pagination.offset)
                         .limit(pagination.limit)
@@ -132,26 +149,27 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/dataset/{identifier}")
-    def get_dataset(identifier: str) -> dict:
+    @app.get("/dataset/{platform}/{identifier}")
+    def get_dataset(platform: str, identifier: str) -> dict:
         """Retrieve all meta-data for a specific dataset."""
         try:
+            platform_instance = Platform(platform)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Platform '{platform}' not recognized.",
+            )
+        try:
+            connector = connectors.dataset_connectors.get(platform_instance, None)
+            if connector is None:
+                raise HTTPException(
+                    status_code=501,
+                    detail=f"No connector for platform '{platform}' available.",
+                )
             with Session(engine) as session:
-                query = select(Dataset).where(Dataset.id == identifier)
-                dataset = session.scalars(query).first()
-                if not dataset:
-                    raise HTTPException(
-                        status_code=404, detail=f"Dataset '{identifier}' not found in the database."
-                    )
-                if dataset.platform == "openml":
-                    dataset_json = openml.fetch_dataset(dataset)
-                else:
-                    raise HTTPException(
-                        status_code=501,
-                        detail=f"No connector for platform '{dataset.platform}' available.",
-                    )
-
-                return {**dataset_json, **dataset.to_dict(depth=1)}
+                dataset = _retrieve_dataset(session, identifier, platform)
+            dataset_meta = connector.fetch(dataset)
+            return dataset_meta.dict()
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
@@ -174,7 +192,7 @@ def add_routes(app: FastAPI, engine: Engine):
         # https://fastapi.tiangolo.com/tutorial/body/#request-body
         try:
             with Session(engine) as session:
-                new_dataset = Dataset(
+                new_dataset = DatasetDescription(
                     name=name, platform=platform, platform_specific_identifier=platform_identifier
                 )
                 session.add(new_dataset)
@@ -182,8 +200,10 @@ def add_routes(app: FastAPI, engine: Engine):
                     session.commit()
                 except IntegrityError:
                     session.rollback()
-                    query = select(Dataset).where(
-                        Dataset.platform == platform and Dataset.name == name
+                    query = select(DatasetDescription).where(
+                        and_(
+                            DatasetDescription.platform == platform, DatasetDescription.name == name
+                        )
                     )
                     existing_dataset = session.scalars(query).first()
                     raise HTTPException(
@@ -209,6 +229,16 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
+    @app.get("/publications-using-dataset/{platform}/{identifier}")
+    def list_publications_using_dataset(platform: str, identifier: str) -> list[dict]:
+        """Lists all publications registered with AIoD that use this dataset."""
+        try:
+            with Session(engine) as session:
+                dataset = _retrieve_dataset(session, identifier, platform)
+                return [publication.to_dict(depth=0) for publication in dataset.publications]
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
     @app.get("/publication/{identifier}")
     def get_publication(identifier: str) -> dict:
         """Retrieves all information for a specific publication registered with AIoD."""
@@ -231,8 +261,13 @@ def create_app() -> FastAPI:
     app = FastAPI()
     args = _parse_args()
     engine = _engine(args.rebuild_db)
-    if args.populate in ["example", "openml"]:
-        populate_database(engine, data=args.populate, only_if_empty=True)
+    if args.populate_datasets in ["example", "openml"]:
+        populate_database(
+            engine,
+            platform_data=args.populate_datasets.lower(),
+            platform_publications="example",
+            only_if_empty=True,
+        )
     add_routes(app, engine)
     return app
 

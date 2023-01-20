@@ -1,0 +1,828 @@
+{
+    "dataset": "rotten_tomatoes",
+    "config": "default",
+    "split": "train",
+    "features": [
+        {
+            "feature_idx": 0,
+            "name": "text",
+            "type": {
+                "dtype": "string",
+                "_type": "Value"
+            }
+        },
+        {
+            "feature_idx": 1,
+            "name": "label",
+            "type": {
+                "names": [
+                    "neg",
+                    "pos"
+                ],
+                "_type": "ClassLabel"
+            }
+        }
+    ],
+    "rows": [
+        {
+            "row_idx": 0,
+            "row": {
+                "text": "the rock is destined to be the 21st century's new \" conan \" and that he's going to make a splash even greater than arnold schwarzenegger , jean-claud van damme or steven segal .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 1,
+            "row": {
+                "text": "the gorgeously elaborate continuation of \" the lord of the rings \" trilogy is so huge that a column of words cannot adequately describe co-writer/director peter jackson's expanded vision of j . r . r . tolkien's middle-earth .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 2,
+            "row": {
+                "text": "effective but too-tepid biopic",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 3,
+            "row": {
+                "text": "if you sometimes like to go to the movies to have fun , wasabi is a good place to start .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 4,
+            "row": {
+                "text": "emerges as something rare , an issue movie that's so honest and keenly observed that it doesn't feel like one .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 5,
+            "row": {
+                "text": "the film provides some great insight into the neurotic mindset of all comics -- even those who have reached the absolute top of the game .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 6,
+            "row": {
+                "text": "offers that rare combination of entertainment and education .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 7,
+            "row": {
+                "text": "perhaps no picture ever made has more literally showed that the road to hell is paved with good intentions .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 8,
+            "row": {
+                "text": "steers turns in a snappy screenplay that curls at the edges ; it's so clever you want to hate it . but he somehow pulls it off .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 9,
+            "row": {
+                "text": "take care of my cat offers a refreshingly different slice of asian cinema .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 10,
+            "row": {
+                "text": "this is a film well worth seeing , talking and singing heads and all .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 11,
+            "row": {
+                "text": "what really surprises about wisegirls is its low-key quality and genuine tenderness .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 12,
+            "row": {
+                "text": "( wendigo is ) why we go to the cinema : to be fed through the eye , the heart , the mind .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 13,
+            "row": {
+                "text": "one of the greatest family-oriented , fantasy-adventure movies ever .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 14,
+            "row": {
+                "text": "ultimately , it ponders the reasons we need stories so much .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 15,
+            "row": {
+                "text": "an utterly compelling 'who wrote it' in which the reputation of the most famous author who ever lived comes into question .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 16,
+            "row": {
+                "text": "illuminating if overly talky documentary .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 17,
+            "row": {
+                "text": "a masterpiece four years in the making .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 18,
+            "row": {
+                "text": "the movie's ripe , enrapturing beauty will tempt those willing to probe its inscrutable mysteries .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 19,
+            "row": {
+                "text": "offers a breath of the fresh air of true sophistication .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 20,
+            "row": {
+                "text": "a thoughtful , provocative , insistently humanizing film .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 21,
+            "row": {
+                "text": "with a cast that includes some of the top actors working in independent film , lovely & amazing involves us because it is so incisive , so bleakly amusing about how we go about our lives .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 22,
+            "row": {
+                "text": "a disturbing and frighteningly evocative assembly of imagery and hypnotic music composed by philip glass .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 23,
+            "row": {
+                "text": "not for everyone , but for those with whom it will connect , it's a nice departure from standard moviegoing fare .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 24,
+            "row": {
+                "text": "scores a few points for doing what it does with a dedicated and good-hearted professionalism .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 25,
+            "row": {
+                "text": "occasionally melodramatic , it's also extremely effective .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 26,
+            "row": {
+                "text": "spiderman rocks",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 27,
+            "row": {
+                "text": "an idealistic love story that brings out the latent 15-year-old romantic in everyone .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 28,
+            "row": {
+                "text": "at about 95 minutes , treasure planet maintains a brisk pace as it races through the familiar story . however , it lacks grandeur and that epic quality often associated with stevenson's tale as well as with earlier disney efforts .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 29,
+            "row": {
+                "text": "it helps that lil bow wow . . . tones down his pint-sized gangsta act to play someone who resembles a real kid .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 30,
+            "row": {
+                "text": "guaranteed to move anyone who ever shook , rattled , or rolled .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 31,
+            "row": {
+                "text": "a masterful film from a master filmmaker , unique in its deceptive grimness , compelling in its fatalist worldview .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 32,
+            "row": {
+                "text": "light , cute and forgettable .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 33,
+            "row": {
+                "text": "if there's a way to effectively teach kids about the dangers of drugs , i think it's in projects like the ( unfortunately r-rated ) paid .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 34,
+            "row": {
+                "text": "while it would be easy to give crush the new title of two weddings and a funeral , it's a far more thoughtful film than any slice of hugh grant whimsy .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 35,
+            "row": {
+                "text": "though everything might be literate and smart , it never took off and always seemed static .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 36,
+            "row": {
+                "text": "cantet perfectly captures the hotel lobbies , two-lane highways , and roadside cafes that permeate vincent's days",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 37,
+            "row": {
+                "text": "ms . fulford-wierzbicki is almost spooky in her sulky , calculating lolita turn .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 38,
+            "row": {
+                "text": "though it is by no means his best work , laissez-passer is a distinguished and distinctive effort by a bona-fide master , a fascinating film replete with rewards to be had by all willing to make the effort to reap them .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 39,
+            "row": {
+                "text": "like most bond outings in recent years , some of the stunts are so outlandish that they border on being cartoonlike . a heavy reliance on cgi technology is beginning to creep into the series .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 40,
+            "row": {
+                "text": "newton draws our attention like a magnet , and acts circles around her better known co-star , mark wahlberg .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 41,
+            "row": {
+                "text": "the story loses its bite in a last-minute happy ending that's even less plausible than the rest of the picture . much of the way , though , this is a refreshingly novel ride .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 42,
+            "row": {
+                "text": "fuller would surely have called this gutsy and at times exhilarating movie a great yarn .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 43,
+            "row": {
+                "text": "'compleja e intelectualmente retadora , el ladrón de orquídeas es uno de esos filmes que vale la pena ver precisamente por su originalidad . '",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 44,
+            "row": {
+                "text": "the film makes a strong case for the importance of the musicians in creating the motown sound .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 45,
+            "row": {
+                "text": "karmen moves like rhythm itself , her lips chanting to the beat , her long , braided hair doing little to wipe away the jeweled beads of sweat .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 46,
+            "row": {
+                "text": "gosling provides an amazing performance that dwarfs everything else in the film .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 47,
+            "row": {
+                "text": "a real movie , about real people , that gives us a rare glimpse into a culture most of us don't know .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 48,
+            "row": {
+                "text": "tender yet lacerating and darkly funny fable .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 49,
+            "row": {
+                "text": "may be spoofing an easy target -- those old '50's giant creature features -- but . . . it acknowledges and celebrates their cheesiness as the reason why people get a kick out of watching them today .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 50,
+            "row": {
+                "text": "an engaging overview of johnson's eccentric career .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 51,
+            "row": {
+                "text": "in its ragged , cheap and unassuming way , the movie works .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 52,
+            "row": {
+                "text": "some actors have so much charisma that you'd be happy to listen to them reading the phone book . hugh grant and sandra bullock are two such likeable actors .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 53,
+            "row": {
+                "text": "sandra nettelbeck beautifully orchestrates the transformation of the chilly , neurotic , and self-absorbed martha as her heart begins to open .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 54,
+            "row": {
+                "text": "behind the snow games and lovable siberian huskies ( plus one sheep dog ) , the picture hosts a parka-wrapped dose of heart .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 55,
+            "row": {
+                "text": "everytime you think undercover brother has run out of steam , it finds a new way to surprise and amuse .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 56,
+            "row": {
+                "text": "manages to be original , even though it rips off many of its ideas .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 57,
+            "row": {
+                "text": "singer/composer bryan adams contributes a slew of songs  a few potential hits , a few more simply intrusive to the story  but the whole package certainly captures the intended , er , spirit of the piece .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 58,
+            "row": {
+                "text": "you'd think by now america would have had enough of plucky british eccentrics with hearts of gold . yet the act is still charming here .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 59,
+            "row": {
+                "text": "whether or not you're enlightened by any of derrida's lectures on \" the other \" and \" the self , \" derrida is an undeniably fascinating and playful fellow .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 60,
+            "row": {
+                "text": "a pleasant enough movie , held together by skilled ensemble actors .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 61,
+            "row": {
+                "text": "this is the best american movie about troubled teens since 1998's whatever .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 62,
+            "row": {
+                "text": "disney has always been hit-or-miss when bringing beloved kids' books to the screen . . . tuck everlasting is a little of both .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 63,
+            "row": {
+                "text": "just the labour involved in creating the layered richness of the imagery in this chiaroscuro of madness and light is astonishing .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 64,
+            "row": {
+                "text": "the animated subplot keenly depicts the inner struggles of our adolescent heroes - insecure , uncontrolled , and intense .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 65,
+            "row": {
+                "text": "the invincible werner herzog is alive and well and living in la",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 66,
+            "row": {
+                "text": "morton is a great actress portraying a complex character , but morvern callar grows less compelling the farther it meanders from its shocking start .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 67,
+            "row": {
+                "text": "part of the charm of satin rouge is that it avoids the obvious with humour and lightness .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 68,
+            "row": {
+                "text": "son of the bride may be a good half-hour too long but comes replete with a flattering sense of mystery and quietness .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 69,
+            "row": {
+                "text": "a simmering psychological drama in which the bursts of sudden violence are all the more startling for the slow buildup that has preceded them .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 70,
+            "row": {
+                "text": "a taut , intelligent psychological drama .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 71,
+            "row": {
+                "text": "a compelling coming-of-age drama about the arduous journey of a sensitive young girl through a series of foster homes and a fierce struggle to pull free from her dangerous and domineering mother's hold over her .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 72,
+            "row": {
+                "text": "a truly moving experience , and a perfect example of how art -- when done right -- can help heal , clarify , and comfort .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 73,
+            "row": {
+                "text": "this delicately observed story , deeply felt and masterfully stylized , is a triumph for its maverick director .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 74,
+            "row": {
+                "text": "at heart the movie is a deftly wrought suspense yarn whose richer shadings work as coloring rather than substance .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 75,
+            "row": {
+                "text": "the appearance of treebeard and gollum's expanded role will either have you loving what you're seeing , or rolling your eyes . i loved it ! gollum's 'performance' is incredible !",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 76,
+            "row": {
+                "text": "a screenplay more ingeniously constructed than \" memento \"",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 77,
+            "row": {
+                "text": "if this movie were a book , it would be a page-turner , you can't wait to see what happens next .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 78,
+            "row": {
+                "text": "haneke challenges us to confront the reality of sexual aberration .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 79,
+            "row": {
+                "text": "absorbing and disturbing -- perhaps more disturbing than originally intended -- but a little clarity would have gone a long way .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 80,
+            "row": {
+                "text": "it's the best film of the year so far , the benchmark against which all other best picture contenders should be measured .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 81,
+            "row": {
+                "text": "painful to watch , but viewers willing to take a chance will be rewarded with two of the year's most accomplished and riveting film performances .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 82,
+            "row": {
+                "text": "this is a startling film that gives you a fascinating , albeit depressing view of iranian rural life close to the iraqi border .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 83,
+            "row": {
+                "text": "an imaginative comedy/thriller .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 84,
+            "row": {
+                "text": "a few artsy flourishes aside , narc is as gritty as a movie gets these days .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 85,
+            "row": {
+                "text": "while the isle is both preposterous and thoroughly misogynistic , its vistas are incredibly beautiful to look at .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 86,
+            "row": {
+                "text": "together , tok and o orchestrate a buoyant , darkly funny dance of death . in the process , they demonstrate that there's still a lot of life in hong kong cinema .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 87,
+            "row": {
+                "text": "director kapur is a filmmaker with a real flair for epic landscapes and adventure , and this is a better film than his earlier english-language movie , the overpraised elizabeth .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 88,
+            "row": {
+                "text": "the movie is a blast of educational energy , as bouncy animation and catchy songs escort you through the entire 85 minutes .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 89,
+            "row": {
+                "text": "a sports movie with action that's exciting on the field and a story you care about off it .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 90,
+            "row": {
+                "text": "doug liman , the director of bourne , directs the traffic well , gets a nice wintry look from his locations , absorbs us with the movie's spycraft and uses damon's ability to be focused and sincere .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 91,
+            "row": {
+                "text": "the tenderness of the piece is still intact .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 92,
+            "row": {
+                "text": "katz uses archival footage , horrifying documents of lynchings , still photographs and charming old reel-to-reel recordings of meeropol entertaining his children to create his song history , but most powerful of all is the song itself",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 93,
+            "row": {
+                "text": "like the film's almost anthropologically detailed realization of early-'80s suburbia , it's significant without being overstated .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 94,
+            "row": {
+                "text": "while mcfarlane's animation lifts the film firmly above the level of other coming-of-age films . . . it's also so jarring that it's hard to get back into the boys' story .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 95,
+            "row": {
+                "text": "if nothing else , this movie introduces a promising , unusual kind of psychological horror .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 96,
+            "row": {
+                "text": "in a normal screen process , these bromides would be barely enough to sustain an interstitial program on the discovery channel . but in imax 3-d , the clichés disappear into the vertiginous perspectives opened up by the photography .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 97,
+            "row": {
+                "text": "writer-director burger imaginatively fans the embers of a dormant national grief and curiosity that has calcified into chronic cynicism and fear .",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 98,
+            "row": {
+                "text": ". . . a roller-coaster ride of a movie",
+                "label": 1
+            },
+            "truncated_cells": []
+        },
+        {
+            "row_idx": 99,
+            "row": {
+                "text": "i enjoyed time of favor while i was watching it , but i was surprised at how quickly it faded from my memory .",
+                "label": 1
+            },
+            "truncated_cells": []
+        }
+    ]
+}

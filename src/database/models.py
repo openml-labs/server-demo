@@ -7,7 +7,7 @@ See also:
 Note: because we use MySQL in the demo, we need to explicitly set maximum string lengths.
 """
 import dataclasses
-import typing  # noqa (flake8 raises incorrect 'Module imported but unused' error)
+import typing  # noqa:F401 (flake8 raises incorrect 'Module imported but unused' error)
 
 from sqlalchemy import ForeignKey, Table, Column, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDataclass, relationship
@@ -61,7 +61,7 @@ dataset_publication_relationship = Table(
 )
 
 
-class Dataset(Base):
+class DatasetDescription(Base):
     """Keeps track of which dataset is stored where."""
 
     __tablename__ = "datasets"
@@ -97,7 +97,7 @@ class Publication(Base):
     title: Mapped[str] = mapped_column(String(250), nullable=False)
     url: Mapped[str] = mapped_column(String(250), nullable=False)
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
-    datasets: Mapped[list["Dataset"]] = relationship(
+    datasets: Mapped[list["DatasetDescription"]] = relationship(
         default_factory=list,
         back_populates="publications",
         secondary=dataset_publication_relationship,

@@ -1,18 +1,22 @@
-import typing  # noqa (flake8 raises incorrect 'Module imported but unused' error)
+import typing  # noqa:F401 (flake8 raises incorrect 'Module imported but unused' error)
 
 import pytest
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
-from database.models import Dataset
+from database.models import DatasetDescription
 
 
 def test_happy_path(client: TestClient, engine: Engine):
     datasets = [
-        Dataset(name="dset1", platform="openml", platform_specific_identifier="1"),
-        Dataset(name="dset1", platform="other_platform", platform_specific_identifier="1"),
-        Dataset(name="dset2", platform="other_platform", platform_specific_identifier="2"),
+        DatasetDescription(name="dset1", platform="openml", platform_specific_identifier="1"),
+        DatasetDescription(
+            name="dset1", platform="other_platform", platform_specific_identifier="1"
+        ),
+        DatasetDescription(
+            name="dset2", platform="other_platform", platform_specific_identifier="2"
+        ),
     ]
     with Session(engine) as session:
         # Populate database
@@ -47,7 +51,9 @@ def test_unicode(client: TestClient, engine: Engine, name):
 
 
 def test_duplicated_dataset(client: TestClient, engine: Engine):
-    datasets = [Dataset(name="dset1", platform="openml", platform_specific_identifier="1")]
+    datasets = [
+        DatasetDescription(name="dset1", platform="openml", platform_specific_identifier="1")
+    ]
     with Session(engine) as session:
         # Populate database
         session.add_all(datasets)
