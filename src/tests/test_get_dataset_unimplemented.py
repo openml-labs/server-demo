@@ -14,8 +14,8 @@ def test_unexisting_platform(client: TestClient, engine: Engine):
         session.add(dataset_description)
         session.commit()
     response = client.get("/dataset/unexisting_platform/1")
-    assert response.status_code == 501
-    assert response.json()["detail"] == "No connector for platform 'unexisting_platform' available."
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Platform 'unexisting_platform' not recognized."
 
 
 def test_wrong_platform(client: TestClient, engine: Engine):
@@ -26,6 +26,6 @@ def test_wrong_platform(client: TestClient, engine: Engine):
         # Populate database
         session.add(dataset_description)
         session.commit()
-    response = client.get("/dataset/wrong_platform/1")
+    response = client.get("/dataset/openml/1")
     assert response.status_code == 404
-    assert response.json()["detail"] == "Dataset '1' of 'wrong_platform' not found in the database."
+    assert response.json()["detail"] == "Dataset '1' of 'openml' not found in the database."

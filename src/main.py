@@ -64,6 +64,22 @@ def _engine(rebuild_db: str) -> Engine:
     return connect_to_database(db_url, delete_first=delete_before_create)
 
 
+def _retrieve_dataset(session, identifier, platform):
+    query = select(DatasetDescription).where(
+        and_(
+            DatasetDescription.platform_specific_identifier == identifier,
+            DatasetDescription.platform == platform,
+        )
+    )
+    dataset = session.scalars(query).first()
+    if not dataset:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dataset '{identifier}' of '{platform}' not found " "in the database.",
+        )
+    return dataset
+
+
 def _wrap_as_http_exception(exception: Exception) -> HTTPException:
     if isinstance(exception, HTTPException):
         return exception
@@ -137,30 +153,23 @@ def add_routes(app: FastAPI, engine: Engine):
     def get_dataset(platform: str, identifier: str) -> dict:
         """Retrieve all meta-data for a specific dataset."""
         try:
-            with Session(engine) as session:
-                query = select(DatasetDescription).where(
-                    and_(
-                        DatasetDescription.platform_specific_identifier == identifier,
-                        DatasetDescription.platform == platform,
-                    )
+            platform_instance = Platform(platform)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Platform '{platform}' not recognized.",
+            )
+        try:
+            connector = connectors.dataset_connectors.get(platform_instance, None)
+            if connector is None:
+                raise HTTPException(
+                    status_code=501,
+                    detail=f"No connector for platform '{platform}' available.",
                 )
-                dataset = session.scalars(query).first()
-                if not dataset:
-                    raise HTTPException(
-                        status_code=404,
-                        detail=f"Dataset '{identifier}' of '{platform}' not found "
-                        "in the database.",
-                    )
-                connector = connectors.dataset_connectors.get(dataset.platform.lower(), None)
-                if connector is not None:
-                    dataset_meta = connector.fetch(dataset)
-                else:
-                    raise HTTPException(
-                        status_code=501,
-                        detail=f"No connector for platform '{platform}' available.",
-                    )
-
-                return dataset_meta.dict()
+            with Session(engine) as session:
+                dataset = _retrieve_dataset(session, identifier, platform)
+            dataset_meta = connector.fetch(dataset)
+            return dataset_meta.dict()
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
@@ -217,6 +226,16 @@ def add_routes(app: FastAPI, engine: Engine):
                         select(Publication).offset(pagination.offset).limit(pagination.limit)
                     ).all()
                 ]
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
+    @app.get("/publications-using-dataset/{platform}/{identifier}")
+    def list_publications_using_dataset(platform: str, identifier: str) -> list[dict]:
+        """Lists all publications registered with AIoD that use this dataset."""
+        try:
+            with Session(engine) as session:
+                dataset = _retrieve_dataset(session, identifier, platform)
+                return [publication.to_dict(depth=0) for publication in dataset.publications]
         except Exception as e:
             raise _wrap_as_http_exception(e)
 

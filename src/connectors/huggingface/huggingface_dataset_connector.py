@@ -69,14 +69,14 @@ class HuggingFaceDatasetConnector(DatasetConnector):
         if len(split_infos) != 1:
             msg = (
                 f"HuggingFace's split endpoint does not contain {config=}, {split=} for "
-                f"dataset {dataset_name}."
+                f"dataset {dataset_name} (or returns multiple)."
             )
             raise HTTPException(status_code=404, detail=msg)
         split_info = split_infos[0]
 
         url = "https://datasets-server.huggingface.co/parquet"
         params = {"dataset": dataset_name}
-        error_msg = "Error while fetching90 parquet data from HuggingFace"
+        error_msg = "Error while fetching parquet data from HuggingFace"
         response_json = HuggingFaceDatasetConnector._get(url, error_msg, params=params)
         file_infos = [
             file
@@ -86,7 +86,7 @@ class HuggingFaceDatasetConnector(DatasetConnector):
         if len(file_infos) != 1:
             msg = (
                 f"HuggingFace's parquet endpoint does not contain {config=}, {split=} for "
-                f"dataset {dataset_name}."
+                f"dataset {dataset_name} (or returns multiple)."
             )
             raise HTTPException(status_code=404, detail=msg)
         file_info = file_infos[0]
