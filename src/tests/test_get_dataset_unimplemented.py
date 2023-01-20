@@ -2,11 +2,11 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
-from database.models import Dataset
+from database.models import DatasetDescription
 
 
 def test_unexisting_platform(client: TestClient, engine: Engine):
-    dataset_description = Dataset(
+    dataset_description = DatasetDescription(
         name="anneal", platform="unexisting_platform", platform_specific_identifier="1"
     )
     with Session(engine) as session:
@@ -19,7 +19,7 @@ def test_unexisting_platform(client: TestClient, engine: Engine):
 
 
 def test_wrong_platform(client: TestClient, engine: Engine):
-    dataset_description = Dataset(
+    dataset_description = DatasetDescription(
         name="anneal", platform="example", platform_specific_identifier="1"
     )
     with Session(engine) as session:

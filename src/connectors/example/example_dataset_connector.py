@@ -1,45 +1,50 @@
-from connectors.abstract.dataset_connector import DatasetConnector, DatasetMeta
+from pydantic_schemaorg.DataCatalog import DataCatalog
+from pydantic_schemaorg.DataDownload import DataDownload
+from pydantic_schemaorg.Dataset import Dataset
+from pydantic_schemaorg.QuantitativeValue import QuantitativeValue
+
+from connectors.abstract.dataset_connector import DatasetConnector
 from connectors.platforms import Platform
-from database.models import Dataset
+from database.models import DatasetDescription
 
 
 class ExampleDatasetConnector(DatasetConnector):
     def platform(self) -> Platform:
         return Platform.example
 
-    def fetch(self, dataset: Dataset) -> DatasetMeta:
-        return DatasetMeta(
+    def fetch(self, dataset: DatasetDescription) -> Dataset:
+        return Dataset(
             name=dataset.name,
-            description="Example",
-            file_url="test",
-            number_of_classes=10,
-            number_of_features=20,
-            number_of_samples=30,
+            identifier=dataset.platform_specific_identifier,
+            distribution=DataDownload(contentUrl="example.url", encodingFormat="application/json"),
+            size=QuantitativeValue(value=1000),
+            isAccessibleForFree=True,
+            includedInDataCatalog=DataCatalog(name=dataset.platform),
         )
 
-    def fetch_all(self) -> list[Dataset]:
+    def fetch_all(self) -> list[DatasetDescription]:
         return [
-            Dataset(
+            DatasetDescription(
                 name="Higgs",
                 platform="openml",
                 platform_specific_identifier="42769",
             ),
-            Dataset(
+            DatasetDescription(
                 name="porto-seguro",
                 platform="openml",
                 platform_specific_identifier="42742",
             ),
-            Dataset(
+            DatasetDescription(
                 name="rotten_tomatoes config:default split:train",
                 platform="huggingface",
                 platform_specific_identifier="rotten_tomatoes|default|train",
             ),
-            Dataset(
+            DatasetDescription(
                 name="rotten_tomatoes config:default split:validation",
                 platform="huggingface",
                 platform_specific_identifier="rotten_tomatoes|default|validation",
             ),
-            Dataset(
+            DatasetDescription(
                 name="rotten_tomatoes config:default split:test",
                 platform="huggingface",
                 platform_specific_identifier="rotten_tomatoes|default|test",

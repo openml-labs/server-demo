@@ -7,7 +7,6 @@ Note: order matters for overloaded paths
 import argparse
 import tomllib
 import traceback
-from dataclasses import asdict
 
 import uvicorn
 from fastapi import Query, Body, Depends, FastAPI, HTTPException
@@ -19,7 +18,7 @@ from sqlalchemy.orm import Session
 
 import connectors
 from connectors import Platform
-from database.models import Dataset, Publication
+from database.models import DatasetDescription, Publication
 from database.setup import connect_to_database, populate_database
 
 
@@ -120,12 +119,12 @@ def add_routes(app: FastAPI, engine: Engine):
         # For additional information on querying through SQLAlchemy's ORM:
         # https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
         try:
-            platform_filter = Dataset.platform.in_(platforms) if platforms else True
+            platform_filter = DatasetDescription.platform.in_(platforms) if platforms else True
             with Session(engine) as session:
                 return [
                     dataset.to_dict(depth=0)
                     for dataset in session.scalars(
-                        select(Dataset)
+                        select(DatasetDescription)
                         .where(platform_filter)
                         .offset(pagination.offset)
                         .limit(pagination.limit)
@@ -139,10 +138,10 @@ def add_routes(app: FastAPI, engine: Engine):
         """Retrieve all meta-data for a specific dataset."""
         try:
             with Session(engine) as session:
-                query = select(Dataset).where(
+                query = select(DatasetDescription).where(
                     and_(
-                        Dataset.platform_specific_identifier == identifier,
-                        Dataset.platform == platform,
+                        DatasetDescription.platform_specific_identifier == identifier,
+                        DatasetDescription.platform == platform,
                     )
                 )
                 dataset = session.scalars(query).first()
@@ -161,12 +160,7 @@ def add_routes(app: FastAPI, engine: Engine):
                         detail=f"No connector for platform '{platform}' available.",
                     )
 
-                return {
-                    **asdict(
-                        dataset_meta, dict_factory=lambda x: {k: v for (k, v) in x if v is not None}
-                    ),
-                    **dataset.to_dict(depth=1),
-                }
+                return dataset_meta.dict()
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
@@ -189,7 +183,7 @@ def add_routes(app: FastAPI, engine: Engine):
         # https://fastapi.tiangolo.com/tutorial/body/#request-body
         try:
             with Session(engine) as session:
-                new_dataset = Dataset(
+                new_dataset = DatasetDescription(
                     name=name, platform=platform, platform_specific_identifier=platform_identifier
                 )
                 session.add(new_dataset)
@@ -197,8 +191,10 @@ def add_routes(app: FastAPI, engine: Engine):
                     session.commit()
                 except IntegrityError:
                     session.rollback()
-                    query = select(Dataset).where(
-                        and_(Dataset.platform == platform, Dataset.name == name)
+                    query = select(DatasetDescription).where(
+                        and_(
+                            DatasetDescription.platform == platform, DatasetDescription.name == name
+                        )
                     )
                     existing_dataset = session.scalars(query).first()
                     raise HTTPException(
@@ -246,10 +242,10 @@ def create_app() -> FastAPI:
     app = FastAPI()
     args = _parse_args()
     engine = _engine(args.rebuild_db)
-    if args.populate in ["example", "openml"]:
+    if args.populate_datasets in ["example", "openml"]:
         populate_database(
             engine,
-            platform_data=args.populate.lower(),
+            platform_data=args.populate_datasets.lower(),
             platform_publications="example",
             only_if_empty=True,
         )

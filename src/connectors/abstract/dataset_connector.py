@@ -1,18 +1,9 @@
 import abc
-from dataclasses import dataclass
+
+from pydantic_schemaorg.Dataset import Dataset
 
 from connectors.platforms import Platform
-from database.models import Dataset
-
-
-@dataclass
-class DatasetMeta:
-    name: str
-    file_url: str
-    number_of_samples: int
-    number_of_features: int
-    description: str | None = None
-    number_of_classes: int | None = None
+from database.models import DatasetDescription
 
 
 class DatasetConnector(abc.ABC):
@@ -24,11 +15,11 @@ class DatasetConnector(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def fetch(self, dataset: Dataset) -> DatasetMeta:
+    def fetch(self, dataset: DatasetDescription) -> Dataset:
         """Retrieve extra metadata for this dataset"""
         pass
 
     @abc.abstractmethod
-    def fetch_all(self) -> list[Dataset]:
+    def fetch_all(self) -> list[DatasetDescription]:
         """Retrieve basic information of all datasets"""
         pass

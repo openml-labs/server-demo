@@ -4,7 +4,7 @@ import responses
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
-from database.models import Publication, Dataset
+from database.models import Publication, DatasetDescription
 from database.setup import populate_database
 from tests.testutils.paths import path_test_resources
 
@@ -15,7 +15,7 @@ HUGGINGFACE_URL = "https://datasets-server.huggingface.co"
 def test_example_happy_path(engine: Engine):
     populate_database(engine, platform_data="example", platform_publications="example")
     with Session(engine) as session:
-        datasets = session.scalars(select(Dataset)).all()
+        datasets = session.scalars(select(DatasetDescription)).all()
         publications = session.scalars(select(Publication)).all()
         assert len(datasets) == 5
         assert len(publications) == 2
@@ -31,7 +31,7 @@ def test_openml_happy_path(engine: Engine):
         populate_database(engine, platform_data="openml", platform_publications="example")
 
     with Session(engine) as session:
-        datasets = session.scalars(select(Dataset)).all()
+        datasets = session.scalars(select(DatasetDescription)).all()
         publications = session.scalars(select(Publication)).all()
         assert len(datasets) == 5
         assert len(publications) == 2
@@ -50,7 +50,7 @@ def test_huggingface_happy_path(engine: Engine):
         populate_database(engine, platform_data="huggingface", platform_publications="example")
 
     with Session(engine) as session:
-        datasets = session.scalars(select(Dataset)).all()
+        datasets = session.scalars(select(DatasetDescription)).all()
         publications = session.scalars(select(Publication)).all()
         assert len(datasets) == 3 * 6
         ids = [d.platform_specific_identifier for d in datasets]

@@ -2,10 +2,18 @@ import typing
 
 import requests
 from fastapi import HTTPException
+from pydantic import Extra
+from pydantic_schemaorg.DataCatalog import DataCatalog
+from pydantic_schemaorg.DataDownload import DataDownload
+from pydantic_schemaorg.Dataset import Dataset
+from pydantic_schemaorg.QuantitativeValue import QuantitativeValue
 
-from connectors import DatasetConnector, DatasetMeta
+from connectors import DatasetConnector
 from connectors.platforms import Platform
-from database.models import Dataset
+from database.models import DatasetDescription
+
+for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
+    obj.Config.extra = Extra.forbid  # Throw exception on unrecognized fields
 
 
 class HuggingFaceDatasetConnector(DatasetConnector):
@@ -34,7 +42,7 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             )
         return response_json
 
-    def fetch(self, dataset: Dataset) -> DatasetMeta:
+    def fetch(self, dataset: DatasetDescription) -> Dataset:
         id_splitted = dataset.platform_specific_identifier.split("|")
         if len(id_splitted) not in (3, 4):
             msg = (
@@ -83,31 +91,35 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             raise HTTPException(status_code=404, detail=msg)
         file_info = file_infos[0]
 
-        url = "https://datasets-server.huggingface.co/first-rows"
-        params = {"dataset": dataset_name, "config": config, "split": split}
-        error_msg = "Error while fetching first-rows from HuggingFace"
-        response_json = HuggingFaceDatasetConnector._get(url, error_msg, params=params)
-        n_features = len(response_json["features"])
+        # TODO: decide our output format for datasets.
+        #  If we want extra information, e.g. the number of features, this works:
+        # url = "https://datasets-server.huggingface.co/first-rows"
+        # params = {"dataset": dataset_name, "config": config, "split": split}
+        # error_msg = "Error while fetching first-rows from HuggingFace"
+        # response_json = HuggingFaceDatasetConnector._get(url, error_msg, params=params)
+        # n_features = len(response_json["features"])
 
-        return DatasetMeta(
+        return Dataset(
             name=dataset.name,
-            file_url=file_info["url"],
-            number_of_samples=split_info["num_examples"],
-            number_of_features=n_features,
+            identifier=dataset.platform_specific_identifier,
+            distribution=DataDownload(contentUrl=file_info["url"], encodingFormat="parquet"),
+            size=QuantitativeValue(value=split_info["num_examples"]),
+            isAccessibleForFree=True,
+            includedInDataCatalog=DataCatalog(name="HuggingFace"),
         )
 
-    def fetch_all(self) -> list[Dataset]:
+    def fetch_all(self) -> list[DatasetDescription]:
         url = "https://datasets-server.huggingface.co/valid"
         error_msg = "Error while fetching all data from HuggingFace"
         response_json = HuggingFaceDatasetConnector._get(url, error_msg)
         return list(self._yield_datasets(response_json["valid"]))
 
-    def _yield_datasets(self, dataset_names) -> typing.Iterator[Dataset]:
+    def _yield_datasets(self, dataset_names) -> typing.Iterator[DatasetDescription]:
         """Yield a Dataset for each (name, config, split) combination."""
         for dataset_name in dataset_names:
             yield from self._yield_datasets_with_name(dataset_name)
 
-    def _yield_datasets_with_name(self, dataset_name: str) -> typing.Iterator[Dataset]:
+    def _yield_datasets_with_name(self, dataset_name: str) -> typing.Iterator[DatasetDescription]:
         """Yield a DataSet for each (config, split) combination with this name."""
         if self.ID_DELIMITER in dataset_name:
             raise ValueError(
@@ -124,7 +136,7 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             split = split_json["split"]
             identifier_complete = f"{dataset_name.replace('/', '|')}|{config}|{split}"
             name_complete = f"{dataset_name.split('/')[-1]} config:{config} split:{split}"
-            yield Dataset(
+            yield DatasetDescription(
                 name=name_complete,
                 platform=self.platform(),
                 platform_specific_identifier=identifier_complete,

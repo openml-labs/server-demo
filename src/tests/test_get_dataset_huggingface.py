@@ -5,14 +5,14 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
-from database.models import Dataset
+from database.models import DatasetDescription
 from tests.testutils.paths import path_test_resources
 
 HUGGINGFACE_URL = "https://datasets-server.huggingface.co"
 
 
 def test_happy_path(client: TestClient, engine: Engine):
-    dataset_description = Dataset(
+    dataset_description = DatasetDescription(
         name="rotten_tomatoes config:default split:train",
         platform="huggingface",
         platform_specific_identifier="rotten_tomatoes|default|train",
@@ -30,23 +30,19 @@ def test_happy_path(client: TestClient, engine: Engine):
 
     assert response_json["name"] == "rotten_tomatoes config:default split:train"
     assert "description" not in response_json
-    assert (
-        response_json["file_url"] == "https://huggingface.co/datasets/rotten_tomatoes/resolve/"
-        "refs%2Fconvert%2Fparquet/default/"
-        "rotten_tomatoes-train.parquet"
+    expected_url = (
+        "https://huggingface.co/datasets/rotten_tomatoes/resolve/"
+        "refs%2Fconvert%2Fparquet/default/rotten_tomatoes-train.parquet"
     )
-    assert response_json["number_of_samples"] == 8530
-    assert response_json["number_of_features"] == 2
-    assert "number_of_classes" not in response_json
-    assert response_json["platform"] == "huggingface"
-    assert response_json["platform_specific_identifier"] == "rotten_tomatoes|default|train"
-    assert response_json["id"] == 1
-    assert len(response_json["publications"]) == 0
-    assert len(response_json) == 8
+    assert response_json["distribution"]["contentUrl"] == expected_url
+    assert response_json["distribution"]["encodingFormat"] == "parquet"
+    assert response_json["size"]["value"] == 8530
+    assert response_json["includedInDataCatalog"]["name"] == "HuggingFace"
+    assert response_json["identifier"] == "rotten_tomatoes|default|train"
 
 
 def test_dataset_not_found_in_local_db(client: TestClient, engine: Engine):
-    dataset_description = Dataset(
+    dataset_description = DatasetDescription(
         name="rotten_tomatoes config:default split:train",
         platform="huggingface",
         platform_specific_identifier="rotten_tomatoes|default|train",
@@ -65,7 +61,7 @@ def test_dataset_not_found_in_local_db(client: TestClient, engine: Engine):
 
 def test_dataset_not_found_in_openml(client: TestClient, engine: Engine):
     identifier = "rotten_tomatoes|default|train"
-    dataset_description = Dataset(
+    dataset_description = DatasetDescription(
         name="name", platform="huggingface", platform_specific_identifier=identifier
     )
     with Session(engine) as session:
@@ -109,14 +105,5 @@ def _mock_normal_responses(mocked_requests: responses.RequestsMock):
         responses.GET,
         f"{HUGGINGFACE_URL}/parquet?dataset=rotten_tomatoes",
         json=parquet_response,
-        status=200,
-    )
-
-    with open(huggingface_path / "first_row_rotten_tomatoes.json", "r") as f:
-        first_row_response = json.load(f)
-    mocked_requests.add(
-        responses.GET,
-        f"{HUGGINGFACE_URL}/first-rows?dataset=rotten_tomatoes&config=default&split=train",
-        json=first_row_response,
         status=200,
     )

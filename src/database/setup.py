@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 import connectors
 from connectors import Platform
-from .models import Base, Dataset, Publication
+from .models import Base, DatasetDescription, Publication
 
 
 def connect_to_database(
@@ -51,7 +51,7 @@ def populate_database(
 ):
     """Add some data to the Dataset and Publication tables.
 
-    platform_data: str (default="example"): One of "nothing", "example" or "openml".
+    platform_data: str (default="example"): One of "nothing", "example", "huggingface" or "openml".
     platform_publications: str (default="example"): One of "nothing" or "example".
     """
 
@@ -79,7 +79,8 @@ def populate_database(
     _link_datasets_with_publications(datasets, publications)
     with Session(engine) as session:
         data_exists = (
-            session.scalars(select(Publication)).first() or session.scalars(select(Dataset)).first()
+            session.scalars(select(Publication)).first()
+            or session.scalars(select(DatasetDescription)).first()
         )
         if only_if_empty and data_exists:
             return

@@ -5,14 +5,16 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 from starlette.testclient import TestClient
 
-from database.models import Publication, Dataset
+from database.models import Publication, DatasetDescription
 
 
 @pytest.mark.parametrize("publication_id", [1, 2])
 def test_happy_path(client: TestClient, engine: Engine, publication_id: int):
     datasets = [
-        Dataset(name="dset1", platform="openml", platform_specific_identifier="1"),
-        Dataset(name="dset1", platform="other_platform", platform_specific_identifier="1"),
+        DatasetDescription(name="dset1", platform="openml", platform_specific_identifier="1"),
+        DatasetDescription(
+            name="dset1", platform="other_platform", platform_specific_identifier="1"
+        ),
     ]
     publications = [
         Publication(title="Title 1", url="https://test.test", datasets=datasets),

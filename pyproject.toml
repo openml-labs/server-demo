@@ -13,6 +13,7 @@ dependencies = [
     "requests",
     "mysqlclient",
     "pydantic",
+    "pydantic_schemaorg",
     "httpx"
 ]
 readme = "README.md"
