@@ -1,11 +1,16 @@
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
+from connectors import ExampleDatasetConnector, ExamplePublicationConnector
 from database.setup import populate_database
 
 
 def test_happy_path(client: TestClient, engine: Engine):
-    populate_database(engine, platform_data="example", platform_publications="example")
+    populate_database(
+        engine,
+        dataset_connector=ExampleDatasetConnector(),
+        publications_connector=ExamplePublicationConnector(),
+    )
 
     response = client.get("/publications-using-dataset/openml/42769")
     assert response.status_code == 200

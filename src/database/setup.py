@@ -5,8 +5,7 @@ Utility functions for initializing the database and tables through SQLAlchemy.
 from sqlalchemy import Engine, text, create_engine, select
 from sqlalchemy.orm import Session
 
-import connectors
-from connectors import Platform
+from connectors import DatasetConnector, PublicationConnector
 from .models import Base, DatasetDescription, Publication
 
 
@@ -46,36 +45,25 @@ def connect_to_database(
 def populate_database(
     engine: Engine,
     only_if_empty: bool = True,
-    platform_data: str = "example",
-    platform_publications="example",
+    dataset_connector: DatasetConnector | None = None,
+    publications_connector: PublicationConnector | None = None,
 ):
     """Add some data to the Dataset and Publication tables.
 
-    platform_data: str (default="example"): One of "nothing", "example", "huggingface" or "openml".
-    platform_publications: str (default="example"): One of "nothing" or "example".
+    platform_data: Platform (default=Platform.example): the platform to use to populate the
+    datasets.
+    platform_publications: Platform (default=Platform.example): the platform to use to populate the
+    publications.
     """
 
-    if platform_data == "nothing":
+    if dataset_connector is None:
         datasets_iterable = iter(())
     else:
-        dataset_connector = connectors.dataset_connectors.get(Platform(platform_data), None)
-        if dataset_connector is None:
-            possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
-            msg = f"{platform_data=}, but must be one of {possibilities}"
-            raise NotImplementedError(msg)
         datasets_iterable = dataset_connector.fetch_all()
-
-    if platform_publications == "nothing":
+    if publications_connector is None:
         publications_iterable = iter(())
     else:
-        publication_connector = connectors.publication_connectors.get(
-            Platform(platform_publications), None
-        )
-        if publication_connector is None:
-            possibilities = ", ".join(f"`{c}`" for c in connectors.publication_connectors.keys())
-            msg = f"{platform_publications=}, but must be one of {possibilities}"
-            raise NotImplementedError(msg)
-        publications_iterable = publication_connector.fetch_all()
+        publications_iterable = publications_connector.fetch_all()
 
     datasets = list(datasets_iterable)
     publications = list(publications_iterable)

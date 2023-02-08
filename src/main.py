@@ -7,6 +7,7 @@ Note: order matters for overloaded paths
 import argparse
 import tomllib
 import traceback
+from typing import Dict
 
 import uvicorn
 from fastapi import Query, Body, Depends, FastAPI, HTTPException
@@ -256,16 +257,36 @@ def add_routes(app: FastAPI, engine: Engine):
             raise _wrap_as_http_exception(e)
 
 
+def _connector_from_platform_name(connector_dict: Dict, platform_name: str):
+    """Get the connector from the connector_dict, identified by its platform name."""
+    if platform_name == "nothing":
+        return None
+    platform = Platform(platform_name)
+    connector = connector_dict.get(platform, None)
+    if connector is None:
+        possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
+        msg = f"Platform {platform}, but must be one of {possibilities}"
+        raise ValueError(msg)
+    return connector
+
+
 def create_app() -> FastAPI:
     """Create the FastAPI application, complete with routes."""
     app = FastAPI()
     args = _parse_args()
+
+    dataset_connector = _connector_from_platform_name(
+        connectors.dataset_connectors, args.populate_datasets
+    )
+    publication_connector = _connector_from_platform_name(
+        connectors.publication_connectors, args.populate_publications
+    )
     engine = _engine(args.rebuild_db)
-    if args.populate_datasets in ["example", "openml"]:
+    if not all(c is None for c in (dataset_connector, publication_connector)):
         populate_database(
             engine,
-            platform_data=args.populate_datasets.lower(),
-            platform_publications="example",
+            dataset_connector=dataset_connector,
+            publications_connector=publication_connector,
             only_if_empty=True,
         )
     add_routes(app, engine)
