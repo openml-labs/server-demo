@@ -1,4 +1,5 @@
 import abc
+from typing import Iterator
 
 from connectors.platforms import Platform
 from database.models import Publication
@@ -14,6 +15,6 @@ class PublicationConnector(abc.ABC):
         return Platform.from_class(self.__class__)
 
     @abc.abstractmethod
-    def fetch_all(self) -> list[Publication]:
+    def fetch_all(self) -> Iterator[Publication]:
         """Retrieve all publications"""
         pass

@@ -1,3 +1,5 @@
+import typing
+
 from pydantic_schemaorg.DataCatalog import DataCatalog
 from pydantic_schemaorg.DataDownload import DataDownload
 from pydantic_schemaorg.Dataset import Dataset
@@ -18,8 +20,8 @@ class ExampleDatasetConnector(DatasetConnector):
             includedInDataCatalog=DataCatalog(name=dataset.platform),
         )
 
-    def fetch_all(self) -> list[DatasetDescription]:
-        return [
+    def fetch_all(self) -> typing.Iterator[DatasetDescription]:
+        yield from (
             DatasetDescription(
                 name="Higgs",
                 platform="openml",
@@ -45,4 +47,4 @@ class ExampleDatasetConnector(DatasetConnector):
                 platform="huggingface",
                 platform_specific_identifier="rotten_tomatoes|default|test",
             ),
-        ]
+        )

@@ -56,16 +56,17 @@ def populate_database(
     """
 
     if platform_data == "nothing":
-        datasets = []
+        datasets_iterable = iter(())
     else:
         dataset_connector = connectors.dataset_connectors.get(Platform(platform_data), None)
         if dataset_connector is None:
             possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
             msg = f"{platform_data=}, but must be one of {possibilities}"
             raise NotImplementedError(msg)
-        datasets = dataset_connector.fetch_all()
+        datasets_iterable = dataset_connector.fetch_all()
+
     if platform_publications == "nothing":
-        publications = []
+        publications_iterable = iter(())
     else:
         publication_connector = connectors.publication_connectors.get(
             Platform(platform_publications), None
@@ -74,8 +75,13 @@ def populate_database(
             possibilities = ", ".join(f"`{c}`" for c in connectors.publication_connectors.keys())
             msg = f"{platform_publications=}, but must be one of {possibilities}"
             raise NotImplementedError(msg)
-        publications = publication_connector.fetch_all()
+        publications_iterable = publication_connector.fetch_all()
 
+    datasets = list(datasets_iterable)
+    publications = list(publications_iterable)
+    # For now, we cannot make use of generators, because we have to link the datasets with the
+    # publications. This is a temporary setup though, so it makes sense to let the fetch_all()
+    # return an iterator for future benefits.
     _link_datasets_with_publications(datasets, publications)
     with Session(engine) as session:
         data_exists = (

@@ -104,15 +104,11 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             includedInDataCatalog=DataCatalog(name="HuggingFace"),
         )
 
-    def fetch_all(self) -> list[DatasetDescription]:
+    def fetch_all(self) -> typing.Iterator[DatasetDescription]:
         url = "https://datasets-server.huggingface.co/valid"
         error_msg = "Error while fetching all data from HuggingFace"
         response_json = HuggingFaceDatasetConnector._get(url, error_msg)
-        return list(self._yield_datasets(response_json["valid"]))
-
-    def _yield_datasets(self, dataset_names) -> typing.Iterator[DatasetDescription]:
-        """Yield a Dataset for each (name, config, split) combination."""
-        for dataset_name in dataset_names:
+        for dataset_name in response_json["valid"]:
             yield from self._yield_datasets_with_name(dataset_name)
 
     def _yield_datasets_with_name(self, dataset_name: str) -> typing.Iterator[DatasetDescription]:

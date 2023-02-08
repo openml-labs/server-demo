@@ -2,6 +2,8 @@
 This module knows how to load an OpenML object based on its AIoD implementation,
 and how to convert the OpenML response to some agreed AIoD format.
 """
+from typing import Iterator
+
 import requests
 from fastapi import HTTPException
 from pydantic import Extra
@@ -70,7 +72,7 @@ class OpenMlDatasetConnector(DatasetConnector):
             setattr(result, "inLanguage", dataset_json["language"])
         return result
 
-    def fetch_all(self) -> list[DatasetDescription]:
+    def fetch_all(self) -> Iterator[DatasetDescription]:
         url = "https://www.openml.org/api/v1/json/data/list"
         response = requests.get(url)
         response_json = response.json()
@@ -80,14 +82,12 @@ class OpenMlDatasetConnector(DatasetConnector):
                 status_code=response.status_code,
                 detail=f"Error while fetching data from OpenML: '{msg}'",
             )
-        return [
-            DatasetDescription(
+        for dataset_json in response_json["data"]["dataset"]:
+            yield DatasetDescription(
                 name=dataset_json["name"],
                 platform=self.platform,
                 platform_specific_identifier=str(dataset_json["did"]),
             )
-            for dataset_json in response_json["data"]["dataset"]
-        ]
 
 
 def _as_int(v: str) -> int:

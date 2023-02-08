@@ -1,4 +1,5 @@
 import abc
+from typing import Iterator
 
 from pydantic_schemaorg.Dataset import Dataset
 
@@ -20,6 +21,6 @@ class DatasetConnector(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def fetch_all(self) -> list[DatasetDescription]:
+    def fetch_all(self) -> Iterator[DatasetDescription]:
         """Retrieve basic information of all datasets"""
         pass
