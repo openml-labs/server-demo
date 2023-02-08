@@ -106,6 +106,7 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             size=QuantitativeValue(value=split_info["num_examples"]),
             isAccessibleForFree=True,
             includedInDataCatalog=DataCatalog(name="HuggingFace"),
+            # Description could be retrieved from https://huggingface.co/api/datasets/[:id]
         )
 
     def fetch_all(self) -> list[DatasetDescription]:
