@@ -9,10 +9,10 @@ from .openml.openml_dataset_connector import OpenMlDatasetConnector
 from .platforms import Platform  # noqa:F401
 
 dataset_connectors = {
-    c.platform(): c
+    c.platform: c
     for c in (ExampleDatasetConnector(), OpenMlDatasetConnector(), HuggingFaceDatasetConnector())
 }  # type: typing.Dict[Platform, DatasetConnector]
 
 publication_connectors = {
-    p.platform(): p for p in (ExamplePublicationConnector(),)
+    p.platform: p for p in (ExamplePublicationConnector(),)
 }  # type: typing.Dict[Platform, PublicationConnector]

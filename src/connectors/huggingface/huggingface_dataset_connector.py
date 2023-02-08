@@ -9,7 +9,6 @@ from pydantic_schemaorg.Dataset import Dataset
 from pydantic_schemaorg.QuantitativeValue import QuantitativeValue
 
 from connectors import DatasetConnector
-from connectors.platforms import Platform
 from database.models import DatasetDescription
 
 for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
@@ -21,9 +20,6 @@ class HuggingFaceDatasetConnector(DatasetConnector):
     # parts: [namespace,] name_dataset, config and split. We need to concat these parts into a
     # single identifier. We cannot use "/" in requests, so "|" seems like a logical choice, that
     # does not occur in the names of current HuggingFace datasets.
-
-    def platform(self) -> Platform:
-        return Platform.huggingface
 
     @staticmethod
     def _get(
@@ -138,6 +134,6 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             name_complete = f"{dataset_name.split('/')[-1]} config:{config} split:{split}"
             yield DatasetDescription(
                 name=name_complete,
-                platform=self.platform(),
+                platform=self.platform,
                 platform_specific_identifier=identifier_complete,
             )

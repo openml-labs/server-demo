@@ -4,14 +4,10 @@ from pydantic_schemaorg.Dataset import Dataset
 from pydantic_schemaorg.QuantitativeValue import QuantitativeValue
 
 from connectors.abstract.dataset_connector import DatasetConnector
-from connectors.platforms import Platform
 from database.models import DatasetDescription
 
 
 class ExampleDatasetConnector(DatasetConnector):
-    def platform(self) -> Platform:
-        return Platform.example
-
     def fetch(self, dataset: DatasetDescription) -> Dataset:
         return Dataset(
             name=dataset.name,

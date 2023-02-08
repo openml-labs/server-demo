@@ -8,10 +8,10 @@ class PublicationConnector(abc.ABC):
     """For every platform that offers publications, this PublicationConnector should be
     implemented."""
 
-    @abc.abstractmethod
+    @property
     def platform(self) -> Platform:
-        """The platform name of this connector (e.g. openml or huggingface)"""
-        pass
+        """The platform of this connector"""
+        return Platform.from_class(self.__class__)
 
     @abc.abstractmethod
     def fetch_all(self) -> list[Publication]:

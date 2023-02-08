@@ -11,7 +11,6 @@ from pydantic_schemaorg.Dataset import Dataset
 from pydantic_schemaorg.QuantitativeValue import QuantitativeValue
 
 from connectors.abstract.dataset_connector import DatasetConnector
-from connectors.platforms import Platform
 from database.models import DatasetDescription
 
 for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
@@ -19,9 +18,6 @@ for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
 
 
 class OpenMlDatasetConnector(DatasetConnector):
-    def platform(self) -> Platform:
-        return Platform.openml
-
     def fetch(self, dataset: DatasetDescription) -> Dataset:
         identifier = dataset.platform_specific_identifier
         url_data = f"https://www.openml.org/api/v1/json/data/{identifier}"
@@ -87,7 +83,7 @@ class OpenMlDatasetConnector(DatasetConnector):
         return [
             DatasetDescription(
                 name=dataset_json["name"],
-                platform=self.platform(),
+                platform=self.platform,
                 platform_specific_identifier=str(dataset_json["did"]),
             )
             for dataset_json in response_json["data"]["dataset"]
