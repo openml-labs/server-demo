@@ -16,7 +16,7 @@ for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
 
 
 class HuggingFaceDatasetConnector(DatasetConnector):
-    ID_DELIMITER = "|"  # The platform_specific_identifier for HuggingFace consists of 3 or 4
+    ID_DELIMITER = "|"  # The node_specific_identifier for HuggingFace consists of 3 or 4
     # parts: [namespace,] name_dataset, config and split. We need to concat these parts into a
     # single identifier. We cannot use "/" in requests, so "|" seems like a logical choice, that
     # does not occur in the names of current HuggingFace datasets.
@@ -39,7 +39,7 @@ class HuggingFaceDatasetConnector(DatasetConnector):
         return response_json
 
     def fetch(self, dataset: DatasetDescription) -> Dataset:
-        id_splitted = dataset.platform_specific_identifier.split("|")
+        id_splitted = dataset.node_specific_identifier.split("|")
         if len(id_splitted) not in (3, 4):
             msg = (
                 "The identifier for huggingface data should be formatted as "
@@ -78,7 +78,7 @@ class HuggingFaceDatasetConnector(DatasetConnector):
 
         return Dataset(
             name=dataset.name,
-            identifier=dataset.platform_specific_identifier,
+            identifier=dataset.node_specific_identifier,
             distribution=DataDownload(contentUrl=file_info["url"], encodingFormat="parquet"),
             size=QuantitativeValue(value=split_info["num_examples"]),
             isAccessibleForFree=True,
@@ -130,6 +130,6 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             name_complete = f"{dataset_name.split('/')[-1]} config:{config} split:{split}"
             yield DatasetDescription(
                 name=name_complete,
-                platform=self.platform,
-                platform_specific_identifier=identifier_complete,
+                node=self.node_name,
+                node_specific_identifier=identifier_complete,
             )

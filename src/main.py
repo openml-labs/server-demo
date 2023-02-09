@@ -18,7 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import connectors
-from connectors import Platform
+from connectors import NodeName
 from database.models import DatasetDescription, Publication
 from database.setup import connect_to_database, populate_database
 
@@ -34,7 +34,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--populate-datasets",
         default="example",
-        choices=["nothing"] + [p.name for p in Platform],
+        choices=["nothing"] + [p.name for p in NodeName],
         help="Determines if the database gets populated with datasets.",
     )
     parser.add_argument(
@@ -65,18 +65,18 @@ def _engine(rebuild_db: str) -> Engine:
     return connect_to_database(db_url, delete_first=delete_before_create)
 
 
-def _retrieve_dataset(session, identifier, platform):
+def _retrieve_dataset(session, identifier, node):
     query = select(DatasetDescription).where(
         and_(
-            DatasetDescription.platform_specific_identifier == identifier,
-            DatasetDescription.platform == platform,
+            DatasetDescription.node_specific_identifier == identifier,
+            DatasetDescription.node == node,
         )
     )
     dataset = session.scalars(query).first()
     if not dataset:
         raise HTTPException(
             status_code=404,
-            detail=f"Dataset '{identifier}' of '{platform}' not found " "in the database.",
+            detail=f"Dataset '{identifier}' of '{node}' not found " "in the database.",
         )
     return dataset
 
@@ -124,25 +124,25 @@ def add_routes(app: FastAPI, engine: Engine):
 
     @app.get("/datasets/")
     def list_datasets(
-        platforms: list[str] | None = Query(default=[]),
+        nodes: list[str] | None = Query(default=[]),
         pagination: Pagination = Depends(Pagination),
     ) -> list[dict]:
         """Lists all datasets registered with AIoD.
 
         Query Parameter
         ------
-         * platforms, list[str], optional: if provided, list only datasets from the given platform.
+         * nodes, list[str], optional: if provided, list only datasets from the given node.
         """
         # For additional information on querying through SQLAlchemy's ORM:
         # https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
         try:
-            platform_filter = DatasetDescription.platform.in_(platforms) if platforms else True
+            node_filter = DatasetDescription.node.in_(nodes) if nodes else True
             with Session(engine) as session:
                 return [
                     dataset.to_dict(depth=0)
                     for dataset in session.scalars(
                         select(DatasetDescription)
-                        .where(platform_filter)
+                        .where(node_filter)
                         .offset(pagination.offset)
                         .limit(pagination.limit)
                     ).all()
@@ -150,25 +150,25 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/dataset/{platform}/{identifier}")
-    def get_dataset(platform: str, identifier: str) -> dict:
+    @app.get("/nodes/{node}/datasets/{identifier}")
+    def get_dataset(node: str, identifier: str) -> dict:
         """Retrieve all meta-data for a specific dataset."""
         try:
-            platform_instance = Platform(platform)
+            node_name = NodeName(node)
         except ValueError:
             raise HTTPException(
                 status_code=400,
-                detail=f"Platform '{platform}' not recognized.",
+                detail=f"Node '{node}' not recognized.",
             )
         try:
-            connector = connectors.dataset_connectors.get(platform_instance, None)
+            connector = connectors.dataset_connectors.get(node_name, None)
             if connector is None:
                 raise HTTPException(
                     status_code=501,
-                    detail=f"No connector for platform '{platform}' available.",
+                    detail=f"No connector for node '{node}' available.",
                 )
             with Session(engine) as session:
-                dataset = _retrieve_dataset(session, identifier, platform)
+                dataset = _retrieve_dataset(session, identifier, node)
             dataset_meta = connector.fetch(dataset)
             return dataset_meta.dict()
         except Exception as e:
@@ -177,16 +177,16 @@ def add_routes(app: FastAPI, engine: Engine):
     @app.post("/register/dataset/")
     def register_dataset(
         name: str = Body(min_length=1, max_length=50),
-        platform: str = Body(min_length=1, max_length=30),
-        platform_identifier: str = Body(min_length=1, max_length=100),
+        node: str = Body(min_length=1, max_length=30),
+        node_identifier: str = Body(min_length=1, max_length=100),
     ) -> dict:
         """Register a dataset with AIoD.
 
         Expects a JSON body with the following key/values:
          - name (max 150 characters): Name of the dataset.
-         - platform (max 30 characters): Name of the platform on which the dataset resides.
-         - platform_identifier (max 100 characters):
-            Identifier which uniquely defines the dataset for the platform.
+         - node (max 30 characters): Name of the node on which the dataset resides.
+         - node_identifier (max 100 characters):
+            Identifier which uniquely defines the dataset for the node.
             For example, with OpenML that is the dataset id.
         """
         # Alternatively, consider defining Pydantic models instead to define the request body:
@@ -194,7 +194,7 @@ def add_routes(app: FastAPI, engine: Engine):
         try:
             with Session(engine) as session:
                 new_dataset = DatasetDescription(
-                    name=name, platform=platform, platform_specific_identifier=platform_identifier
+                    name=name, node=node, node_specific_identifier=node_identifier
                 )
                 session.add(new_dataset)
                 try:
@@ -202,15 +202,13 @@ def add_routes(app: FastAPI, engine: Engine):
                 except IntegrityError:
                     session.rollback()
                     query = select(DatasetDescription).where(
-                        and_(
-                            DatasetDescription.platform == platform, DatasetDescription.name == name
-                        )
+                        and_(DatasetDescription.node == node, DatasetDescription.name == name)
                     )
                     existing_dataset = session.scalars(query).first()
                     raise HTTPException(
                         status_code=409,
                         detail="There already exists a dataset with the same "
-                        f"platform and name, with id={existing_dataset.id}.",
+                        f"node and name, with id={existing_dataset.id}.",
                     )
                 return new_dataset.to_dict(depth=1)
         except Exception as e:
@@ -230,12 +228,12 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/publications-using-dataset/{platform}/{identifier}")
-    def list_publications_using_dataset(platform: str, identifier: str) -> list[dict]:
+    @app.get("/publications-using-dataset/{node}/{identifier}")
+    def list_publications_using_dataset(node: str, identifier: str) -> list[dict]:
         """Lists all publications registered with AIoD that use this dataset."""
         try:
             with Session(engine) as session:
-                dataset = _retrieve_dataset(session, identifier, platform)
+                dataset = _retrieve_dataset(session, identifier, node)
                 return [publication.to_dict(depth=0) for publication in dataset.publications]
         except Exception as e:
             raise _wrap_as_http_exception(e)
@@ -257,15 +255,18 @@ def add_routes(app: FastAPI, engine: Engine):
             raise _wrap_as_http_exception(e)
 
 
-def _connector_from_platform_name(connector_dict: Dict, platform_name: str):
-    """Get the connector from the connector_dict, identified by its platform name."""
-    if platform_name == "nothing":
+def _connector_from_node_name(connector_type: str, connector_dict: Dict, node_name: str):
+    """Get the connector from the connector_dict, identified by its node name."""
+    if node_name == "nothing":
         return None
-    platform = Platform(platform_name)
-    connector = connector_dict.get(platform, None)
+    node = NodeName(node_name)
+    connector = connector_dict.get(node, None)
     if connector is None:
         possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
-        msg = f"Platform {platform}, but must be one of {possibilities}"
+        msg = (
+            f"The {connector_type} cannot be populated by node {node_name}. Possible values:"
+            f" {possibilities}"
+        )
         raise ValueError(msg)
     return connector
 
@@ -275,11 +276,11 @@ def create_app() -> FastAPI:
     app = FastAPI()
     args = _parse_args()
 
-    dataset_connector = _connector_from_platform_name(
-        connectors.dataset_connectors, args.populate_datasets
+    dataset_connector = _connector_from_node_name(
+        "dataset", connectors.dataset_connectors, args.populate_datasets
     )
-    publication_connector = _connector_from_platform_name(
-        connectors.publication_connectors, args.populate_publications
+    publication_connector = _connector_from_node_name(
+        "publication", connectors.publication_connectors, args.populate_publications
     )
     engine = _engine(args.rebuild_db)
     if not all(c is None for c in (dataset_connector, publication_connector)):

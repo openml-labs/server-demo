@@ -21,7 +21,7 @@ for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
 
 class OpenMlDatasetConnector(DatasetConnector):
     def fetch(self, dataset: DatasetDescription) -> Dataset:
-        identifier = dataset.platform_specific_identifier
+        identifier = dataset.node_specific_identifier
         url_data = f"https://www.openml.org/api/v1/json/data/{identifier}"
         response = requests.get(url_data)
         if not response.ok:
@@ -60,7 +60,7 @@ class OpenMlDatasetConnector(DatasetConnector):
             url=url_data,
             description=dataset_json["description"],
             dateCreated=dataset_json["upload_date"],
-            identifier=dataset.platform_specific_identifier,
+            identifier=dataset.node_specific_identifier,
             distribution=DataDownload(
                 contentUrl=dataset_json["url"], encodingFormat=dataset_json["format"]
             ),
@@ -85,8 +85,8 @@ class OpenMlDatasetConnector(DatasetConnector):
         for dataset_json in response_json["data"]["dataset"]:
             yield DatasetDescription(
                 name=dataset_json["name"],
-                platform=self.platform,
-                platform_specific_identifier=str(dataset_json["did"]),
+                node=self.node_name,
+                node_specific_identifier=str(dataset_json["did"]),
             )
 
 

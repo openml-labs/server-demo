@@ -48,13 +48,7 @@ def populate_database(
     dataset_connector: DatasetConnector | None = None,
     publications_connector: PublicationConnector | None = None,
 ):
-    """Add some data to the Dataset and Publication tables.
-
-    platform_data: Platform (default=Platform.example): the platform to use to populate the
-    datasets.
-    platform_publications: Platform (default=Platform.example): the platform to use to populate the
-    publications.
-    """
+    """Add some data to the Dataset and Publication tables."""
 
     if dataset_connector is None:
         datasets_iterable = iter(())
@@ -100,13 +94,13 @@ def _link_datasets_with_publications(datasets, publications):
     benchmark_datasets = [
         d
         for d in datasets
-        if d.platform == "openml" and int(d.platform_specific_identifier) in benchmark_dataset_ids
+        if d.node == "openml" and int(d.node_specific_identifier) in benchmark_dataset_ids
     ]
     benchmark_publications = [p for p in publications if p.title == "AMLB: an AutoML Benchmark"]
     higgs_title = "Searching for exotic particles in high-energy physics with deep learning"
     higgs_publication = [p for p in publications if p.title == higgs_title]
     for publication in higgs_publication:
-        publication.datasets = [d for d in datasets if d.platform == "openml" and d.name == "Higgs"]
+        publication.datasets = [d for d in datasets if d.node == "openml" and d.name == "Higgs"]
     for publication in benchmark_publications:
         publication.datasets = benchmark_datasets
     return datasets, publications

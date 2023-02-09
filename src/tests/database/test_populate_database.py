@@ -71,7 +71,7 @@ def test_huggingface_happy_path(engine: Engine):
         datasets = session.scalars(select(DatasetDescription)).all()
         publications = session.scalars(select(Publication)).all()
         assert len(datasets) == 3 * 6
-        ids = [d.platform_specific_identifier for d in datasets]
+        ids = [d.node_specific_identifier for d in datasets]
         names = [d.name for d in datasets]
         assert "0n1xus|codexglue|code-completion-token-py150|train" in ids
         assert "codexglue config:code-completion-token-py150 split:train" in names

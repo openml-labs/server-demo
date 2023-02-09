@@ -3,17 +3,17 @@ from typing import Iterator
 
 from pydantic_schemaorg.Dataset import Dataset
 
-from connectors.platforms import Platform
+from connectors.node_names import NodeName
 from database.models import DatasetDescription
 
 
 class DatasetConnector(abc.ABC):
-    """For every platform that offers datasets, this DatasetConnector should be implemented."""
+    """For every node that offers datasets, this DatasetConnector should be implemented."""
 
     @property
-    def platform(self) -> Platform:
-        """The platform of this connector"""
-        return Platform.from_class(self.__class__)
+    def node_name(self) -> NodeName:
+        """The node of this connector"""
+        return NodeName.from_class(self.__class__)
 
     @abc.abstractmethod
     def fetch(self, dataset: DatasetDescription) -> Dataset:

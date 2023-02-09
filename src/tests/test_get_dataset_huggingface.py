@@ -14,8 +14,8 @@ HUGGINGFACE_URL = "https://datasets-server.huggingface.co"
 def test_happy_path(client: TestClient, engine: Engine):
     dataset_description = DatasetDescription(
         name="rotten_tomatoes config:default split:train",
-        platform="huggingface",
-        platform_specific_identifier="rotten_tomatoes|default|train",
+        node="huggingface",
+        node_specific_identifier="rotten_tomatoes|default|train",
     )
     with Session(engine) as session:
         # Populate database.
@@ -23,7 +23,7 @@ def test_happy_path(client: TestClient, engine: Engine):
         session.commit()
     with responses.RequestsMock() as mocked_requests:
         _mock_normal_responses(mocked_requests)
-        response = client.get("/dataset/huggingface/rotten_tomatoes|default|train")
+        response = client.get("/nodes/huggingface/datasets/rotten_tomatoes|default|train")
 
     assert response.status_code == 200
     response_json = response.json()
@@ -44,14 +44,14 @@ def test_happy_path(client: TestClient, engine: Engine):
 def test_dataset_not_found_in_local_db(client: TestClient, engine: Engine):
     dataset_description = DatasetDescription(
         name="rotten_tomatoes config:default split:train",
-        platform="huggingface",
-        platform_specific_identifier="rotten_tomatoes|default|train",
+        node="huggingface",
+        node_specific_identifier="rotten_tomatoes|default|train",
     )
     with Session(engine) as session:
         # Populate database
         session.add(dataset_description)
         session.commit()
-    response = client.get("/dataset/huggingface/rotten_tomatoes|default|test")
+    response = client.get("/nodes/huggingface/datasets/rotten_tomatoes|default|test")
     assert response.status_code == 404
     assert (
         response.json()["detail"] == "Dataset 'rotten_tomatoes|default|test' of 'huggingface' "
@@ -62,7 +62,7 @@ def test_dataset_not_found_in_local_db(client: TestClient, engine: Engine):
 def test_dataset_not_found_in_openml(client: TestClient, engine: Engine):
     identifier = "rotten_tomatoes|default|train"
     dataset_description = DatasetDescription(
-        name="name", platform="huggingface", platform_specific_identifier=identifier
+        name="name", node="huggingface", node_specific_identifier=identifier
     )
     with Session(engine) as session:
         # Populate database
@@ -79,7 +79,7 @@ def test_dataset_not_found_in_openml(client: TestClient, engine: Engine):
             json={"error": msg},
             status=412,
         )
-        response = client.get(f"/dataset/huggingface/{identifier}")
+        response = client.get(f"/nodes/huggingface/datasets/{identifier}")
     assert response.status_code == 412
     assert response.json()["detail"] == f"Error while fetching splits from HuggingFace: '{msg}'"
 
