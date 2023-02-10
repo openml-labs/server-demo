@@ -66,7 +66,7 @@ def _engine(rebuild_db: str) -> Engine:
     return connect_to_database(db_url, delete_first=delete_before_create)
 
 
-def _retrieve_dataset(session, identifier, node=None):
+def _retrieve_dataset(session, identifier, node=None) -> DatasetDescription:
     if node is None:
         query = select(DatasetDescription).where(DatasetDescription.id == identifier)
     else:
@@ -84,6 +84,17 @@ def _retrieve_dataset(session, identifier, node=None):
             msg = f"Dataset '{identifier}' of '{node}' not found in the database."
         raise HTTPException(status_code=404, detail=msg)
     return dataset
+
+
+def _retrieve_publication(session, identifier) -> Publication:
+    query = select(Publication).where(Publication.id == identifier)
+    publication = session.scalars(query).first()
+    if not publication:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Publication '{identifier}' not found in the database.",
+        )
+    return publication
 
 
 def _wrap_as_http_exception(exception: Exception) -> HTTPException:
@@ -285,18 +296,46 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
+    @app.post("/datasets/{dataset_id}/publications/{publication_id}")
+    def relate_publication_to_dataset(dataset_id: str, publication_id: str):
+        try:
+            with Session(engine) as session:
+                dataset = _retrieve_dataset(session, dataset_id)
+                publication = _retrieve_publication(session, publication_id)
+                if publication in dataset.publications:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Dataset {dataset_id} is already linked to publication "
+                        f"{publication_id}.",
+                    )
+                dataset.publications.append(publication)
+                session.commit()
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
+    @app.delete("/datasets/{dataset_id}/publications/{publication_id}")
+    def delete_relation_publication_to_dataset(dataset_id: str, publication_id: str):
+        try:
+            with Session(engine) as session:
+                dataset = _retrieve_dataset(session, dataset_id)
+                publication = _retrieve_publication(session, publication_id)
+                if publication not in dataset.publications:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Dataset {dataset_id} is not linked to publication "
+                        f"{publication_id}.",
+                    )
+                dataset.publications = [p for p in dataset.publications if p != publication]
+                session.commit()
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
     @app.get("/publications/{identifier}")
     def get_publication(identifier: str) -> dict:
         """Retrieves all information for a specific publication registered with AIoD."""
         try:
             with Session(engine) as session:
-                query = select(Publication).where(Publication.id == identifier)
-                publication = session.scalars(query).first()
-                if not publication:
-                    raise HTTPException(
-                        status_code=404,
-                        detail=f"Publication '{identifier}' not found in the database.",
-                    )
+                publication = _retrieve_publication(session, identifier)
                 return publication.to_dict(depth=1)
         except Exception as e:
             raise _wrap_as_http_exception(e)
