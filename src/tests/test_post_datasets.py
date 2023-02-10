@@ -20,8 +20,8 @@ def test_happy_path(client: TestClient, engine: Engine):
         session.commit()
 
     response = client.post(
-        "/register/dataset",
-        json={"name": "dset2", "node": "openml", "node_identifier": "2"},
+        "/datasets",
+        json={"name": "dset2", "node": "openml", "node_specific_identifier": "2"},
     )
     assert response.status_code == 200
     response_json = response.json()
@@ -39,7 +39,7 @@ def test_happy_path(client: TestClient, engine: Engine):
 )
 def test_unicode(client: TestClient, engine: Engine, name):
     response = client.post(
-        "/register/dataset", json={"name": name, "node": "openml", "node_identifier": "2"}
+        "/datasets", json={"name": name, "node": "openml", "node_specific_identifier": "2"}
     )
     assert response.status_code == 200
     response_json = response.json()
@@ -53,8 +53,8 @@ def test_duplicated_dataset(client: TestClient, engine: Engine):
         session.add_all(datasets)
         session.commit()
     response = client.post(
-        "/register/dataset",
-        json={"name": "dset1", "node": "openml", "node_identifier": "1"},
+        "/datasets",
+        json={"name": "dset1", "node": "openml", "node_specific_identifier": "1"},
     )
     assert response.status_code == 409
     assert (
@@ -63,31 +63,35 @@ def test_duplicated_dataset(client: TestClient, engine: Engine):
     )
 
 
-@pytest.mark.parametrize("field", ["name", "node", "node_identifier"])
+@pytest.mark.parametrize("field", ["name", "node", "node_specific_identifier"])
 def test_missing_value(client: TestClient, engine: Engine, field: str):
     data = {
         "name": "Name",
         "node": "openml",
-        "node_identifier": "1",
+        "node_specific_identifier": "1",
     }  # type: typing.Dict[str, typing.Any]
     del data[field]
-    response = client.post("/register/dataset", json=data)
+    response = client.post("/datasets", json=data)
     assert response.status_code == 422
     assert response.json()["detail"] == [
         {"loc": ["body", field], "msg": "field required", "type": "value_error.missing"}
     ]
 
 
-@pytest.mark.parametrize("field", ["name", "node", "node_identifier"])
+@pytest.mark.parametrize("field", ["name", "node", "node_specific_identifier"])
 def test_null_value(client: TestClient, engine: Engine, field: str):
     data = {
         "name": "Name",
         "node": "openml",
-        "node_identifier": "1",
+        "node_specific_identifier": "1",
     }  # type: typing.Dict[str, typing.Any]
     data[field] = None
-    response = client.post("/register/dataset", json=data)
+    response = client.post("/datasets", json=data)
     assert response.status_code == 422
     assert response.json()["detail"] == [
-        {"loc": ["body", field], "msg": "field required", "type": "value_error.missing"}
+        {
+            "loc": ["body", field],
+            "msg": "none is not an allowed value",
+            "type": "type_error.none.not_allowed",
+        }
     ]

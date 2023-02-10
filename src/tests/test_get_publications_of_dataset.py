@@ -12,7 +12,7 @@ def test_happy_path(client: TestClient, engine: Engine):
         publications_connector=ExamplePublicationConnector(),
     )
 
-    response = client.get("/publications-using-dataset/openml/42769")
+    response = client.get("/datasets/1/publications")
     assert response.status_code == 200
     response_json = response.json()
     assert len(response_json) == 2

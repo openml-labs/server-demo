@@ -25,7 +25,7 @@ def test_happy_path(client: TestClient, engine: Engine, publication_id: int):
         session.add_all(copy.deepcopy(publications))
         session.commit()
 
-    response = client.get(f"/publication/{publication_id}")
+    response = client.get(f"/publications/{publication_id}")
     assert response.status_code == 200
     response_json = response.json()
 
@@ -39,7 +39,7 @@ def test_happy_path(client: TestClient, engine: Engine, publication_id: int):
 
 @pytest.mark.parametrize("publication_id", [-1, 2, 3])
 def test_empty_db(client: TestClient, engine: Engine, publication_id):
-    response = client.get(f"/publication/{publication_id}")
+    response = client.get(f"/publications/{publication_id}")
     assert response.status_code == 404
     assert response.json()["detail"] == f"Publication '{publication_id}' not found in the database."
 
@@ -51,6 +51,6 @@ def test_publication_not_found(client: TestClient, engine: Engine, publication_i
         # Populate database
         session.add_all(publications)
         session.commit()
-    response = client.get(f"/publication/{publication_id}")  # Note that only publication 1 exists
+    response = client.get(f"/publications/{publication_id}")  # Note that only publication 1 exists
     assert response.status_code == 404
     assert response.json()["detail"] == f"Publication '{publication_id}' not found in the database."

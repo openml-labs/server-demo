@@ -10,14 +10,15 @@ import traceback
 from typing import Dict
 
 import uvicorn
-from fastapi import Query, Body, Depends, FastAPI, HTTPException
+from fastapi import Query, Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from sqlalchemy import select, Engine, and_
+from sqlalchemy import select, Engine, and_, delete, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import connectors
+import schemas
 from connectors import NodeName
 from database.models import DatasetDescription, Publication
 from database.setup import connect_to_database, populate_database
@@ -65,19 +66,23 @@ def _engine(rebuild_db: str) -> Engine:
     return connect_to_database(db_url, delete_first=delete_before_create)
 
 
-def _retrieve_dataset(session, identifier, node):
-    query = select(DatasetDescription).where(
-        and_(
-            DatasetDescription.node_specific_identifier == identifier,
-            DatasetDescription.node == node,
+def _retrieve_dataset(session, identifier, node=None):
+    if node is None:
+        query = select(DatasetDescription).where(DatasetDescription.id == identifier)
+    else:
+        query = select(DatasetDescription).where(
+            and_(
+                DatasetDescription.node_specific_identifier == identifier,
+                DatasetDescription.node == node,
+            )
         )
-    )
     dataset = session.scalars(query).first()
     if not dataset:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Dataset '{identifier}' of '{node}' not found " "in the database.",
-        )
+        if node is None:
+            msg = f"Dataset '{identifier}' not found in the database."
+        else:
+            msg = f"Dataset '{identifier}' of '{node}' not found in the database."
+        raise HTTPException(status_code=404, detail=msg)
     return dataset
 
 
@@ -150,8 +155,26 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
+    @app.get("/datasets/{identifier}")
+    def get_dataset(identifier: str) -> dict:
+        """Retrieve all meta-data for a specific dataset."""
+        try:
+            with Session(engine) as session:
+                dataset = _retrieve_dataset(session, identifier)
+            node = dataset.node
+            connector = connectors.dataset_connectors.get(node, None)
+            if connector is None:
+                raise HTTPException(
+                    status_code=501,
+                    detail=f"No connector for node '{node}' available.",
+                )
+            dataset_meta = connector.fetch(dataset)
+            return dataset_meta.dict()
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
     @app.get("/nodes/{node}/datasets/{identifier}")
-    def get_dataset(node: str, identifier: str) -> dict:
+    def get_node_dataset(node: str, identifier: str) -> dict:
         """Retrieve all meta-data for a specific dataset."""
         try:
             node_name = NodeName(node)
@@ -174,27 +197,15 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.post("/register/dataset/")
-    def register_dataset(
-        name: str = Body(min_length=1, max_length=50),
-        node: str = Body(min_length=1, max_length=30),
-        node_identifier: str = Body(min_length=1, max_length=100),
-    ) -> dict:
-        """Register a dataset with AIoD.
-
-        Expects a JSON body with the following key/values:
-         - name (max 150 characters): Name of the dataset.
-         - node (max 30 characters): Name of the node on which the dataset resides.
-         - node_identifier (max 100 characters):
-            Identifier which uniquely defines the dataset for the node.
-            For example, with OpenML that is the dataset id.
-        """
-        # Alternatively, consider defining Pydantic models instead to define the request body:
-        # https://fastapi.tiangolo.com/tutorial/body/#request-body
+    @app.post("/datasets/")
+    def register_dataset(dataset: schemas.Dataset) -> dict:
+        """Register a dataset with AIoD."""
         try:
             with Session(engine) as session:
                 new_dataset = DatasetDescription(
-                    name=name, node=node, node_specific_identifier=node_identifier
+                    name=dataset.name,
+                    node=dataset.node,
+                    node_specific_identifier=dataset.node_specific_identifier,
                 )
                 session.add(new_dataset)
                 try:
@@ -202,7 +213,10 @@ def add_routes(app: FastAPI, engine: Engine):
                 except IntegrityError:
                     session.rollback()
                     query = select(DatasetDescription).where(
-                        and_(DatasetDescription.node == node, DatasetDescription.name == name)
+                        and_(
+                            DatasetDescription.node == dataset.node,
+                            DatasetDescription.name == dataset.name,
+                        )
                     )
                     existing_dataset = session.scalars(query).first()
                     raise HTTPException(
@@ -211,6 +225,39 @@ def add_routes(app: FastAPI, engine: Engine):
                         f"node and name, with id={existing_dataset.id}.",
                     )
                 return new_dataset.to_dict(depth=1)
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
+    @app.put("/datasets/{identifier}")
+    def put_dataset(identifier: str, dataset: schemas.Dataset) -> dict:
+        """Update an existing dataset."""
+        try:
+            with Session(engine) as session:
+                _retrieve_dataset(session, identifier)  # Raise error if dataset does not exist
+                statement = (
+                    update(DatasetDescription)
+                    .values(
+                        node=dataset.node,
+                        name=dataset.name,
+                        node_specific_identifier=dataset.node_specific_identifier,
+                    )
+                    .where(DatasetDescription.id == identifier)
+                )
+                session.execute(statement)
+                session.commit()
+                return _retrieve_dataset(session, identifier).to_dict(depth=1)
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
+    @app.delete("/datasets/{identifier}")
+    def delete_dataset(identifier: str):
+        try:
+            with Session(engine) as session:
+                _retrieve_dataset(session, identifier)  # Raise error if it does not exist
+
+                statement = delete(DatasetDescription).where(DatasetDescription.id == identifier)
+                session.execute(statement)
+                session.commit()
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
@@ -228,17 +275,17 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/publications-using-dataset/{node}/{identifier}")
-    def list_publications_using_dataset(node: str, identifier: str) -> list[dict]:
+    @app.get("/datasets/{identifier}/publications")
+    def list_publications_using_dataset(identifier: str) -> list[dict]:
         """Lists all publications registered with AIoD that use this dataset."""
         try:
             with Session(engine) as session:
-                dataset = _retrieve_dataset(session, identifier, node)
+                dataset = _retrieve_dataset(session, identifier)
                 return [publication.to_dict(depth=0) for publication in dataset.publications]
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/publication/{identifier}")
+    @app.get("/publications/{identifier}")
     def get_publication(identifier: str) -> dict:
         """Retrieves all information for a specific publication registered with AIoD."""
         try:
