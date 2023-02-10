@@ -10,7 +10,7 @@ import traceback
 from typing import Dict
 
 import uvicorn
-from fastapi import Query, Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlalchemy import select, Engine, and_, delete, update
@@ -39,6 +39,12 @@ def _parse_args() -> argparse.Namespace:
         help="Determines if the database gets populated with datasets.",
     )
     parser.add_argument(
+        "--populate-publications",
+        default="example",
+        choices=["nothing"] + [p.name for p in NodeName],
+        help="Determines if the database gets populated with publications.",
+    )
+    parser.add_argument(
         "--reload",
         action="store_true",
         help="Use `--reload` for FastAPI.",
@@ -64,6 +70,25 @@ def _engine(rebuild_db: str) -> Engine:
 
     delete_before_create = rebuild_db == "always"
     return connect_to_database(db_url, delete_first=delete_before_create)
+
+
+def _connector_from_node_name(connector_type: str, connector_dict: Dict, node_name: str):
+    """Get the connector from the connector_dict, identified by its node name."""
+    if node_name == "nothing":
+        return None
+    try:
+        node = NodeName(node_name)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Node '{node_name}' not recognized.")
+    connector = connector_dict.get(node, None)
+    if connector is None:
+        possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
+        msg = (
+            f"No {connector_type} connector for node '{node_name}' available. Possible values:"
+            f" {possibilities}"
+        )
+        raise HTTPException(status_code=501, detail=msg)
+    return connector
 
 
 def _retrieve_dataset(session, identifier, node=None) -> DatasetDescription:
@@ -140,7 +165,6 @@ def add_routes(app: FastAPI, engine: Engine):
 
     @app.get("/datasets/")
     def list_datasets(
-        nodes: list[str] | None = Query(default=[]),
         pagination: Pagination = Depends(Pagination),
     ) -> list[dict]:
         """Lists all datasets registered with AIoD.
@@ -152,17 +176,9 @@ def add_routes(app: FastAPI, engine: Engine):
         # For additional information on querying through SQLAlchemy's ORM:
         # https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
         try:
-            node_filter = DatasetDescription.node.in_(nodes) if nodes else True
             with Session(engine) as session:
-                return [
-                    dataset.to_dict(depth=0)
-                    for dataset in session.scalars(
-                        select(DatasetDescription)
-                        .where(node_filter)
-                        .offset(pagination.offset)
-                        .limit(pagination.limit)
-                    ).all()
-                ]
+                query = select(DatasetDescription).offset(pagination.offset).limit(pagination.limit)
+                return [dataset.to_dict(depth=0) for dataset in session.scalars(query).all()]
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
@@ -184,23 +200,32 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
+    @app.get("/nodes")
+    def get_nodes() -> list:
+        """Retrieve information about all known nodes"""
+        return list(NodeName)
+
+    @app.get("/nodes/{node}/datasets")
+    def get_node_datasets(node: str, pagination: Pagination = Depends(Pagination)) -> list[dict]:
+        """Retrieve all meta-data of the datasets of a single node."""
+        try:
+            with Session(engine) as session:
+                query = (
+                    select(DatasetDescription)
+                    .where(DatasetDescription.node == node)
+                    .offset(pagination.offset)
+                    .limit(pagination.limit)
+                )
+                return [dataset.to_dict(depth=0) for dataset in session.scalars(query).all()]
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
     @app.get("/nodes/{node}/datasets/{identifier}")
     def get_node_dataset(node: str, identifier: str) -> dict:
-        """Retrieve all meta-data for a specific dataset."""
+        """Retrieve all meta-data for a specific dataset identified by the
+        node-specific-identifier."""
         try:
-            node_name = NodeName(node)
-        except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Node '{node}' not recognized.",
-            )
-        try:
-            connector = connectors.dataset_connectors.get(node_name, None)
-            if connector is None:
-                raise HTTPException(
-                    status_code=501,
-                    detail=f"No connector for node '{node}' available.",
-                )
+            connector = _connector_from_node_name("dataset", connectors.dataset_connectors, node)
             with Session(engine) as session:
                 dataset = _retrieve_dataset(session, identifier, node)
             dataset_meta = connector.fetch(dataset)
@@ -286,8 +311,63 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
+    @app.post("/publications")
+    def register_publication(publication: schemas.Publication) -> dict:
+        """Add a publication."""
+        try:
+            with Session(engine) as session:
+                new_publication = Publication(title=publication.title, url=publication.url)
+                session.add(new_publication)
+                session.commit()
+                return new_publication.to_dict(depth=1)
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
+    @app.get("/publications/{identifier}")
+    def get_publication(identifier: str) -> dict:
+        """Retrieves all information for a specific publication registered with AIoD."""
+        try:
+            with Session(engine) as session:
+                publication = _retrieve_publication(session, identifier)
+                return publication.to_dict(depth=1)
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
+    @app.put("/publications/{identifier}")
+    def update_publication(identifier: str, publication: schemas.Publication) -> dict:
+        """Update this publication"""
+        try:
+            with Session(engine) as session:
+                _retrieve_publication(session, identifier)  # Raise error if dataset does not exist
+                statement = (
+                    update(Publication)
+                    .values(
+                        title=publication.title,
+                        url=publication.url,
+                    )
+                    .where(Publication.id == identifier)
+                )
+                session.execute(statement)
+                session.commit()
+                return _retrieve_publication(session, identifier).to_dict(depth=1)
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
+    @app.delete("/publications/{identifier}")
+    def delete_publication(identifier: str):
+        """Delete this publication from AIoD."""
+        try:
+            with Session(engine) as session:
+                _retrieve_publication(session, identifier)  # Raise error if it does not exist
+
+                statement = delete(Publication).where(Publication.id == identifier)
+                session.execute(statement)
+                session.commit()
+        except Exception as e:
+            raise _wrap_as_http_exception(e)
+
     @app.get("/datasets/{identifier}/publications")
-    def list_publications_using_dataset(identifier: str) -> list[dict]:
+    def list_publications_related_to_dataset(identifier: str) -> list[dict]:
         """Lists all publications registered with AIoD that use this dataset."""
         try:
             with Session(engine) as session:
@@ -329,37 +409,6 @@ def add_routes(app: FastAPI, engine: Engine):
                 session.commit()
         except Exception as e:
             raise _wrap_as_http_exception(e)
-
-    @app.get("/publications/{identifier}")
-    def get_publication(identifier: str) -> dict:
-        """Retrieves all information for a specific publication registered with AIoD."""
-        try:
-            with Session(engine) as session:
-                publication = _retrieve_publication(session, identifier)
-                return publication.to_dict(depth=1)
-        except Exception as e:
-            raise _wrap_as_http_exception(e)
-
-    @app.get("/nodes")
-    def get_nodes() -> list:
-        """Retrieve information about all known nodes"""
-        return list(NodeName)
-
-
-def _connector_from_node_name(connector_type: str, connector_dict: Dict, node_name: str):
-    """Get the connector from the connector_dict, identified by its node name."""
-    if node_name == "nothing":
-        return None
-    node = NodeName(node_name)
-    connector = connector_dict.get(node, None)
-    if connector is None:
-        possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
-        msg = (
-            f"The {connector_type} cannot be populated by node {node_name}. Possible values:"
-            f" {possibilities}"
-        )
-        raise ValueError(msg)
-    return connector
 
 
 def create_app() -> FastAPI:
