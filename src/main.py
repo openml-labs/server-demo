@@ -340,6 +340,11 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
+    @app.get("/nodes")
+    def get_nodes() -> list:
+        """Retrieve information about all known nodes"""
+        return list(NodeName)
+
 
 def _connector_from_node_name(connector_type: str, connector_dict: Dict, node_name: str):
     """Get the connector from the connector_dict, identified by its node name."""
