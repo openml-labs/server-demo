@@ -72,8 +72,10 @@ class OpenMlDatasetConnector(DatasetConnector):
             setattr(result, "inLanguage", dataset_json["language"])
         return result
 
-    def fetch_all(self) -> Iterator[DatasetDescription]:
+    def fetch_all(self, limit=None) -> Iterator[DatasetDescription]:
         url = "https://www.openml.org/api/v1/json/data/list"
+        if limit is not None:
+            url = f"{url}/limit/{limit}"
         response = requests.get(url)
         response_json = response.json()
         if not response.ok:

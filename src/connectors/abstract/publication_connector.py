@@ -14,6 +14,6 @@ class PublicationConnector(abc.ABC):
         return NodeName.from_class(self.__class__)
 
     @abc.abstractmethod
-    def fetch_all(self) -> Iterator[Publication]:
+    def fetch_all(self, limit: int | None) -> Iterator[Publication]:
         """Retrieve all publications"""
         pass

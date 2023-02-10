@@ -74,7 +74,7 @@ class DatasetDescription(Base):
     )
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     node: Mapped[str] = mapped_column(String(30), nullable=False)
-    node_specific_identifier: Mapped[str] = mapped_column(String(100), nullable=False)
+    node_specific_identifier: Mapped[str] = mapped_column(String(250), nullable=False)
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     publications: Mapped[list["Publication"]] = relationship(
         default_factory=list,

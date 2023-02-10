@@ -1,6 +1,8 @@
 """
 Utility functions for initializing the database and tables through SQLAlchemy.
 """
+import itertools
+from typing import List
 
 from sqlalchemy import Engine, text, create_engine, select
 from sqlalchemy.orm import Session
@@ -45,19 +47,25 @@ def connect_to_database(
 def populate_database(
     engine: Engine,
     only_if_empty: bool = True,
-    dataset_connector: DatasetConnector | None = None,
-    publications_connector: PublicationConnector | None = None,
+    dataset_connectors: List[DatasetConnector] | None = None,
+    publications_connectors: List[PublicationConnector] | None = None,
+    limit_datasets: int | None = None,
+    limit_publications: int | None = None,
 ):
     """Add some data to the Dataset and Publication tables."""
 
-    if dataset_connector is None:
+    if dataset_connectors is None:
         datasets_iterable = iter(())
     else:
-        datasets_iterable = dataset_connector.fetch_all()
-    if publications_connector is None:
+        datasets_iterable = itertools.chain(
+            *[c.fetch_all(limit=limit_datasets) for c in dataset_connectors]
+        )
+    if publications_connectors is None:
         publications_iterable = iter(())
     else:
-        publications_iterable = publications_connector.fetch_all()
+        publications_iterable = itertools.chain(
+            *[c.fetch_all(limit=limit_publications) for c in publications_connectors]
+        )
 
     datasets = list(datasets_iterable)
     publications = list(publications_iterable)

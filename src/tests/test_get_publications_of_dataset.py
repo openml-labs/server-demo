@@ -8,8 +8,8 @@ from database.setup import populate_database
 def test_get_happy_path(client: TestClient, engine: Engine):
     populate_database(
         engine,
-        dataset_connector=ExampleDatasetConnector(),
-        publications_connector=ExamplePublicationConnector(),
+        dataset_connectors=[ExampleDatasetConnector()],
+        publications_connectors=[ExamplePublicationConnector()],
     )
 
     publications = _get_publications(client, "1")
@@ -29,8 +29,8 @@ def test_get_happy_path(client: TestClient, engine: Engine):
 def test_post_happy_path(client: TestClient, engine: Engine):
     populate_database(
         engine,
-        dataset_connector=ExampleDatasetConnector(),
-        publications_connector=ExamplePublicationConnector(),
+        dataset_connectors=[ExampleDatasetConnector()],
+        publications_connectors=[ExamplePublicationConnector()],
     )
     assert len(_get_publications(client, "3")) == 0
     response = client.post("/datasets/3/publications/1")
@@ -46,8 +46,8 @@ def test_post_happy_path(client: TestClient, engine: Engine):
 def test_post_duplicate(client: TestClient, engine: Engine):
     populate_database(
         engine,
-        dataset_connector=ExampleDatasetConnector(),
-        publications_connector=ExamplePublicationConnector(),
+        dataset_connectors=[ExampleDatasetConnector()],
+        publications_connectors=[ExamplePublicationConnector()],
     )
     client.post("/datasets/3/publications/1")
     response = client.post("/datasets/3/publications/1")
@@ -58,8 +58,8 @@ def test_post_duplicate(client: TestClient, engine: Engine):
 def test_delete(client: TestClient, engine: Engine):
     populate_database(
         engine,
-        dataset_connector=ExampleDatasetConnector(),
-        publications_connector=ExamplePublicationConnector(),
+        dataset_connectors=[ExampleDatasetConnector()],
+        publications_connectors=[ExamplePublicationConnector()],
     )
     assert len(_get_publications(client, "1")) == 2
     response = client.delete("/datasets/1/publications/1")
@@ -70,8 +70,8 @@ def test_delete(client: TestClient, engine: Engine):
 def test_delete_nonexistent(client: TestClient, engine: Engine):
     populate_database(
         engine,
-        dataset_connector=ExampleDatasetConnector(),
-        publications_connector=ExamplePublicationConnector(),
+        dataset_connectors=[ExampleDatasetConnector()],
+        publications_connectors=[ExamplePublicationConnector()],
     )
     response = client.delete("/datasets/1/publications/3")
     assert response.status_code == 404

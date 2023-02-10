@@ -7,7 +7,7 @@ class Dataset(BaseModel):
 
     name: str = Field(max_length=150)
     node: str = Field(max_length=30)
-    node_specific_identifier: str = Field(max_length=100)
+    node_specific_identifier: str = Field(max_length=250)
     id: int | None
 
 

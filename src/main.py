@@ -26,6 +26,7 @@ from database.setup import connect_to_database, populate_database
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Please refer to the README.")
+    parser.add_argument("--url-prefix", default="", help="Prefix for the api url.")
     parser.add_argument(
         "--rebuild-db",
         default="only-if-empty",
@@ -34,15 +35,30 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--populate-datasets",
-        default="example",
-        choices=["nothing"] + [p.name for p in NodeName],
-        help="Determines if the database gets populated with datasets.",
+        default=[],
+        nargs="+",
+        choices=[p.name for p in NodeName],
+        help="Zero, one or more nodes with which the datasets should get populated.",
     )
     parser.add_argument(
         "--populate-publications",
-        default="example",
-        choices=["nothing"] + [p.name for p in NodeName],
-        help="Determines if the database gets populated with publications.",
+        default=[],
+        nargs="+",
+        choices=[p.name for p in NodeName],
+        help="Zero, one or more nodes with which the publications should get populated.",
+    )
+    parser.add_argument(
+        "--limit-number-of-datasets",
+        type=int,
+        default=None,
+        help="Limit the number of initial datasets with which the database is populated, per node.",
+    )
+    parser.add_argument(
+        "--limit-number-of-publications",
+        default=None,
+        type=int,
+        help="Limit the number of initial publication with which the database is populated, "
+        "per node.",
     )
     parser.add_argument(
         "--reload",
@@ -74,8 +90,6 @@ def _engine(rebuild_db: str) -> Engine:
 
 def _connector_from_node_name(connector_type: str, connector_dict: Dict, node_name: str):
     """Get the connector from the connector_dict, identified by its node name."""
-    if node_name == "nothing":
-        return None
     try:
         node = NodeName(node_name)
     except ValueError:
@@ -138,10 +152,10 @@ def _wrap_as_http_exception(exception: Exception) -> HTTPException:
     )
 
 
-def add_routes(app: FastAPI, engine: Engine):
+def add_routes(app: FastAPI, engine: Engine, url_prefix=""):
     """Add routes to the FastAPI application"""
 
-    @app.get("/", response_class=HTMLResponse)
+    @app.get(url_prefix + "/", response_class=HTMLResponse)
     def home() -> str:
         """Provides a redirect page to the docs."""
         return """
@@ -163,7 +177,7 @@ def add_routes(app: FastAPI, engine: Engine):
         offset: int = 0
         limit: int = 100
 
-    @app.get("/datasets/")
+    @app.get(url_prefix + "/datasets/")
     def list_datasets(
         pagination: Pagination = Depends(Pagination),
     ) -> list[dict]:
@@ -182,7 +196,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/datasets/{identifier}")
+    @app.get(url_prefix + "/datasets/{identifier}")
     def get_dataset(identifier: str) -> dict:
         """Retrieve all meta-data for a specific dataset."""
         try:
@@ -200,12 +214,12 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/nodes")
+    @app.get(url_prefix + "/nodes")
     def get_nodes() -> list:
         """Retrieve information about all known nodes"""
         return list(NodeName)
 
-    @app.get("/nodes/{node}/datasets")
+    @app.get(url_prefix + "/nodes/{node}/datasets")
     def get_node_datasets(node: str, pagination: Pagination = Depends(Pagination)) -> list[dict]:
         """Retrieve all meta-data of the datasets of a single node."""
         try:
@@ -220,7 +234,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/nodes/{node}/datasets/{identifier}")
+    @app.get(url_prefix + "/nodes/{node}/datasets/{identifier}")
     def get_node_dataset(node: str, identifier: str) -> dict:
         """Retrieve all meta-data for a specific dataset identified by the
         node-specific-identifier."""
@@ -233,7 +247,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.post("/datasets/")
+    @app.post(url_prefix + "/datasets/")
     def register_dataset(dataset: schemas.Dataset) -> dict:
         """Register a dataset with AIoD."""
         try:
@@ -264,7 +278,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.put("/datasets/{identifier}")
+    @app.put(url_prefix + "/datasets/{identifier}")
     def put_dataset(identifier: str, dataset: schemas.Dataset) -> dict:
         """Update an existing dataset."""
         try:
@@ -285,7 +299,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.delete("/datasets/{identifier}")
+    @app.delete(url_prefix + "/datasets/{identifier}")
     def delete_dataset(identifier: str):
         try:
             with Session(engine) as session:
@@ -297,7 +311,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/publications")
+    @app.get(url_prefix + "/publications")
     def list_publications(pagination: Pagination = Depends(Pagination)) -> list[dict]:
         """Lists all publications registered with AIoD."""
         try:
@@ -311,7 +325,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.post("/publications")
+    @app.post(url_prefix + "/publications")
     def register_publication(publication: schemas.Publication) -> dict:
         """Add a publication."""
         try:
@@ -323,7 +337,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/publications/{identifier}")
+    @app.get(url_prefix + "/publications/{identifier}")
     def get_publication(identifier: str) -> dict:
         """Retrieves all information for a specific publication registered with AIoD."""
         try:
@@ -333,7 +347,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.put("/publications/{identifier}")
+    @app.put(url_prefix + "/publications/{identifier}")
     def update_publication(identifier: str, publication: schemas.Publication) -> dict:
         """Update this publication"""
         try:
@@ -353,7 +367,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.delete("/publications/{identifier}")
+    @app.delete(url_prefix + "/publications/{identifier}")
     def delete_publication(identifier: str):
         """Delete this publication from AIoD."""
         try:
@@ -366,7 +380,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.get("/datasets/{identifier}/publications")
+    @app.get(url_prefix + "/datasets/{identifier}/publications")
     def list_publications_related_to_dataset(identifier: str) -> list[dict]:
         """Lists all publications registered with AIoD that use this dataset."""
         try:
@@ -376,7 +390,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.post("/datasets/{dataset_id}/publications/{publication_id}")
+    @app.post(url_prefix + "/datasets/{dataset_id}/publications/{publication_id}")
     def relate_publication_to_dataset(dataset_id: str, publication_id: str):
         try:
             with Session(engine) as session:
@@ -393,7 +407,7 @@ def add_routes(app: FastAPI, engine: Engine):
         except Exception as e:
             raise _wrap_as_http_exception(e)
 
-    @app.delete("/datasets/{dataset_id}/publications/{publication_id}")
+    @app.delete(url_prefix + "/datasets/{dataset_id}/publications/{publication_id}")
     def delete_relation_publication_to_dataset(dataset_id: str, publication_id: str):
         try:
             with Session(engine) as session:
@@ -416,21 +430,25 @@ def create_app() -> FastAPI:
     app = FastAPI()
     args = _parse_args()
 
-    dataset_connector = _connector_from_node_name(
-        "dataset", connectors.dataset_connectors, args.populate_datasets
-    )
-    publication_connector = _connector_from_node_name(
-        "publication", connectors.publication_connectors, args.populate_publications
-    )
+    dataset_connectors = [
+        _connector_from_node_name("dataset", connectors.dataset_connectors, node_name)
+        for node_name in args.populate_datasets
+    ]
+    publication_connectors = [
+        _connector_from_node_name("publication", connectors.publication_connectors, node_name)
+        for node_name in args.populate_publications
+    ]
     engine = _engine(args.rebuild_db)
-    if not all(c is None for c in (dataset_connector, publication_connector)):
+    if len(dataset_connectors) + len(publication_connectors) > 0:
         populate_database(
             engine,
-            dataset_connector=dataset_connector,
-            publications_connector=publication_connector,
+            dataset_connectors=dataset_connectors,
+            publications_connectors=publication_connectors,
             only_if_empty=True,
+            limit_datasets=args.limit_number_of_datasets,
+            limit_publications=args.limit_number_of_publications,
         )
-    add_routes(app, engine)
+    add_routes(app, engine, url_prefix=args.url_prefix)
     return app
 
 
