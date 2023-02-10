@@ -11,4 +11,7 @@ docker run \
 	--name apiserver \
 	-v $SRC_PATH:/app \
 	ai4eu_server_demo \
-	--rebuild-db always
+	--rebuild-db always \
+	--populate-datasets openml huggingface \
+	--populate-publications example \
+	--url-prefix ""

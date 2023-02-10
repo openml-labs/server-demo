@@ -1,0 +1,25 @@
+{
+    "splits": [
+        {
+            "dataset": "rotten_tomatoes",
+            "config": "default",
+            "split": "train",
+            "num_bytes": 1074810,
+            "num_examples": 8530
+        },
+        {
+            "dataset": "rotten_tomatoes",
+            "config": "default",
+            "split": "validation",
+            "num_bytes": 134679,
+            "num_examples": 1066
+        },
+        {
+            "dataset": "rotten_tomatoes",
+            "config": "default",
+            "split": "test",
+            "num_bytes": 135972,
+            "num_examples": 1066
+        }
+    ]
+}

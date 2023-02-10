@@ -1,0 +1,67 @@
+{
+    "splits": [
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "reasoning_1hop",
+            "split": "train",
+            "num_bytes": null,
+            "num_examples": null
+        },
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "reasoning_1hop",
+            "split": "validation",
+            "num_bytes": null,
+            "num_examples": null
+        },
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "reasoning_1hop",
+            "split": "test",
+            "num_bytes": null,
+            "num_examples": null
+        },
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "reasoning_2hop",
+            "split": "train",
+            "num_bytes": null,
+            "num_examples": null
+        },
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "reasoning_2hop",
+            "split": "validation",
+            "num_bytes": null,
+            "num_examples": null
+        },
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "reasoning_2hop",
+            "split": "test",
+            "num_bytes": null,
+            "num_examples": null
+        },
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "usnli",
+            "split": "train",
+            "num_bytes": null,
+            "num_examples": null
+        },
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "usnli",
+            "split": "validation",
+            "num_bytes": null,
+            "num_examples": null
+        },
+        {
+            "dataset": "04-07-22/wep-probes",
+            "config": "usnli",
+            "split": "test",
+            "num_bytes": null,
+            "num_examples": null
+        }
+    ]
+}
