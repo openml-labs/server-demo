@@ -21,6 +21,6 @@ class DatasetConnector(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def fetch_all(self) -> Iterator[DatasetDescription]:
+    def fetch_all(self, limit: int | None) -> Iterator[DatasetDescription]:
         """Retrieve basic information of all datasets"""
         pass

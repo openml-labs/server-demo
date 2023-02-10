@@ -104,11 +104,13 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             raise HTTPException(status_code=404, detail=msg)
         return items[0]
 
-    def fetch_all(self) -> typing.Iterator[DatasetDescription]:
+    def fetch_all(self, limit: int | None) -> typing.Iterator[DatasetDescription]:
+        if limit is None or limit > 10:
+            limit = 25  # it's slow...
         url = "https://datasets-server.huggingface.co/valid"
         error_msg = "Error while fetching all data from HuggingFace"
         response_json = HuggingFaceDatasetConnector._get(url, error_msg)
-        for dataset_name in response_json["valid"]:
+        for dataset_name in response_json["valid"][:limit]:
             yield from self._yield_datasets_with_name(dataset_name)
 
     def _yield_datasets_with_name(self, dataset_name: str) -> typing.Iterator[DatasetDescription]:
@@ -121,7 +123,10 @@ class HuggingFaceDatasetConnector(DatasetConnector):
         url = "https://datasets-server.huggingface.co/splits"
         params = {"dataset": dataset_name}
         error_msg = "Error while fetching splits from HuggingFace"
-        response_json = HuggingFaceDatasetConnector._get(url, error_msg, params=params)
+        try:
+            response_json = HuggingFaceDatasetConnector._get(url, error_msg, params=params)
+        except HTTPException:
+            return  # Probably authentication issue
 
         for split_json in response_json["splits"]:
             config = split_json["config"]

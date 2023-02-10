@@ -21,8 +21,8 @@ HUGGINGFACE_URL = "https://datasets-server.huggingface.co"
 def test_example_happy_path(engine: Engine):
     populate_database(
         engine,
-        dataset_connector=ExampleDatasetConnector(),
-        publications_connector=ExamplePublicationConnector(),
+        dataset_connectors=[ExampleDatasetConnector()],
+        publications_connectors=[ExamplePublicationConnector()],
     )
     with Session(engine) as session:
         datasets = session.scalars(select(DatasetDescription)).all()
@@ -40,8 +40,8 @@ def test_openml_happy_path(engine: Engine):
         mocked_requests.add(responses.GET, f"{OPENML_URL}/data/list", json=response, status=200)
         populate_database(
             engine,
-            dataset_connector=OpenMlDatasetConnector(),
-            publications_connector=ExamplePublicationConnector(),
+            dataset_connectors=[OpenMlDatasetConnector()],
+            publications_connectors=[ExamplePublicationConnector()],
         )
 
     with Session(engine) as session:
@@ -63,8 +63,8 @@ def test_huggingface_happy_path(engine: Engine):
             mock_split(mocked_requests, split_name)
         populate_database(
             engine,
-            dataset_connector=HuggingFaceDatasetConnector(),
-            publications_connector=ExamplePublicationConnector(),
+            dataset_connectors=[HuggingFaceDatasetConnector()],
+            publications_connectors=[ExamplePublicationConnector()],
         )
 
     with Session(engine) as session:

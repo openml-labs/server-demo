@@ -20,8 +20,8 @@ class ExampleDatasetConnector(DatasetConnector):
             includedInDataCatalog=DataCatalog(name=dataset.node),
         )
 
-    def fetch_all(self) -> typing.Iterator[DatasetDescription]:
-        yield from (
+    def fetch_all(self, limit: int | None) -> typing.Iterator[DatasetDescription]:
+        yield from [
             DatasetDescription(
                 name="Higgs",
                 node="openml",
@@ -47,4 +47,4 @@ class ExampleDatasetConnector(DatasetConnector):
                 node="huggingface",
                 node_specific_identifier="rotten_tomatoes|default|test",
             ),
-        )
+        ][:limit]
