@@ -67,14 +67,14 @@ class DatasetDescription(Base):
     __tablename__ = "datasets"
     __table_args__ = (
         UniqueConstraint(
-            "platform",
-            "platform_specific_identifier",
-            name="dataset_unique_platform_platform_specific_identifier",
+            "node",
+            "node_specific_identifier",
+            name="dataset_unique_node_node_specific_identifier",
         ),
     )
     name: Mapped[str] = mapped_column(String(150), nullable=False)
-    platform: Mapped[str] = mapped_column(String(30), nullable=False)
-    platform_specific_identifier: Mapped[str] = mapped_column(String(100), nullable=False)
+    node: Mapped[str] = mapped_column(String(30), nullable=False)
+    node_specific_identifier: Mapped[str] = mapped_column(String(100), nullable=False)
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     publications: Mapped[list["Publication"]] = relationship(
         default_factory=list,

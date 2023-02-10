@@ -2,6 +2,8 @@
 This module knows how to load an OpenML object based on its AIoD implementation,
 and how to convert the OpenML response to some agreed AIoD format.
 """
+from typing import Iterator
+
 import requests
 from fastapi import HTTPException
 from pydantic import Extra
@@ -11,7 +13,6 @@ from pydantic_schemaorg.Dataset import Dataset
 from pydantic_schemaorg.QuantitativeValue import QuantitativeValue
 
 from connectors.abstract.dataset_connector import DatasetConnector
-from connectors.platforms import Platform
 from database.models import DatasetDescription
 
 for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
@@ -19,11 +20,8 @@ for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
 
 
 class OpenMlDatasetConnector(DatasetConnector):
-    def platform(self) -> Platform:
-        return Platform.openml
-
     def fetch(self, dataset: DatasetDescription) -> Dataset:
-        identifier = dataset.platform_specific_identifier
+        identifier = dataset.node_specific_identifier
         url_data = f"https://www.openml.org/api/v1/json/data/{identifier}"
         response = requests.get(url_data)
         if not response.ok:
@@ -62,7 +60,7 @@ class OpenMlDatasetConnector(DatasetConnector):
             url=url_data,
             description=dataset_json["description"],
             dateCreated=dataset_json["upload_date"],
-            identifier=dataset.platform_specific_identifier,
+            identifier=dataset.node_specific_identifier,
             distribution=DataDownload(
                 contentUrl=dataset_json["url"], encodingFormat=dataset_json["format"]
             ),
@@ -74,7 +72,7 @@ class OpenMlDatasetConnector(DatasetConnector):
             setattr(result, "inLanguage", dataset_json["language"])
         return result
 
-    def fetch_all(self) -> list[DatasetDescription]:
+    def fetch_all(self) -> Iterator[DatasetDescription]:
         url = "https://www.openml.org/api/v1/json/data/list"
         response = requests.get(url)
         response_json = response.json()
@@ -84,14 +82,12 @@ class OpenMlDatasetConnector(DatasetConnector):
                 status_code=response.status_code,
                 detail=f"Error while fetching data from OpenML: '{msg}'",
             )
-        return [
-            DatasetDescription(
+        for dataset_json in response_json["data"]["dataset"]:
+            yield DatasetDescription(
                 name=dataset_json["name"],
-                platform=self.platform(),
-                platform_specific_identifier=str(dataset_json["did"]),
+                node=self.node_name,
+                node_specific_identifier=str(dataset_json["did"]),
             )
-            for dataset_json in response_json["data"]["dataset"]
-        ]
 
 
 def _as_int(v: str) -> int:

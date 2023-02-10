@@ -9,7 +9,6 @@ from pydantic_schemaorg.Dataset import Dataset
 from pydantic_schemaorg.QuantitativeValue import QuantitativeValue
 
 from connectors import DatasetConnector
-from connectors.platforms import Platform
 from database.models import DatasetDescription
 
 for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
@@ -17,13 +16,10 @@ for obj in (DataCatalog, DataDownload, Dataset, QuantitativeValue):
 
 
 class HuggingFaceDatasetConnector(DatasetConnector):
-    ID_DELIMITER = "|"  # The platform_specific_identifier for HuggingFace consists of 3 or 4
+    ID_DELIMITER = "|"  # The node_specific_identifier for HuggingFace consists of 3 or 4
     # parts: [namespace,] name_dataset, config and split. We need to concat these parts into a
     # single identifier. We cannot use "/" in requests, so "|" seems like a logical choice, that
     # does not occur in the names of current HuggingFace datasets.
-
-    def platform(self) -> Platform:
-        return Platform.huggingface
 
     @staticmethod
     def _get(
@@ -43,7 +39,7 @@ class HuggingFaceDatasetConnector(DatasetConnector):
         return response_json
 
     def fetch(self, dataset: DatasetDescription) -> Dataset:
-        id_splitted = dataset.platform_specific_identifier.split("|")
+        id_splitted = dataset.node_specific_identifier.split("|")
         if len(id_splitted) not in (3, 4):
             msg = (
                 "The identifier for huggingface data should be formatted as "
@@ -57,39 +53,20 @@ class HuggingFaceDatasetConnector(DatasetConnector):
         config = id_splitted[-2]
         split = id_splitted[-1]
 
-        url = "https://datasets-server.huggingface.co/splits"
-        params = {"dataset": dataset_name}
-        error_msg = "Error while fetching splits from HuggingFace"
-        response_json = HuggingFaceDatasetConnector._get(url, error_msg, params=params)
-        split_infos = [
-            file
-            for file in response_json["splits"]
-            if file["config"] == config and file["split"] == split
-        ]
-        if len(split_infos) != 1:
-            msg = (
-                f"HuggingFace's split endpoint does not contain {config=}, {split=} for "
-                f"dataset {dataset_name} (or returns multiple)."
-            )
-            raise HTTPException(status_code=404, detail=msg)
-        split_info = split_infos[0]
-
-        url = "https://datasets-server.huggingface.co/parquet"
-        params = {"dataset": dataset_name}
-        error_msg = "Error while fetching parquet data from HuggingFace"
-        response_json = HuggingFaceDatasetConnector._get(url, error_msg, params=params)
-        file_infos = [
-            file
-            for file in response_json["parquet_files"]
-            if file["config"] == config and file["split"] == split
-        ]
-        if len(file_infos) != 1:
-            msg = (
-                f"HuggingFace's parquet endpoint does not contain {config=}, {split=} for "
-                f"dataset {dataset_name} (or returns multiple)."
-            )
-            raise HTTPException(status_code=404, detail=msg)
-        file_info = file_infos[0]
+        split_info = HuggingFaceDatasetConnector._fetch_item(
+            url="https://datasets-server.huggingface.co/splits",
+            items_name="splits",
+            dataset_name=dataset_name,
+            config=config,
+            split=split,
+        )
+        file_info = HuggingFaceDatasetConnector._fetch_item(
+            url="https://datasets-server.huggingface.co/parquet",
+            items_name="parquet_files",
+            dataset_name=dataset_name,
+            config=config,
+            split=split,
+        )
 
         # TODO: decide our output format for datasets.
         #  If we want extra information, e.g. the number of features, this works:
@@ -101,22 +78,37 @@ class HuggingFaceDatasetConnector(DatasetConnector):
 
         return Dataset(
             name=dataset.name,
-            identifier=dataset.platform_specific_identifier,
+            identifier=dataset.node_specific_identifier,
             distribution=DataDownload(contentUrl=file_info["url"], encodingFormat="parquet"),
             size=QuantitativeValue(value=split_info["num_examples"]),
             isAccessibleForFree=True,
             includedInDataCatalog=DataCatalog(name="HuggingFace"),
         )
 
-    def fetch_all(self) -> list[DatasetDescription]:
+    @staticmethod
+    def _fetch_item(url: str, items_name: str, dataset_name: str, config: str, split: str):
+        """Fetching a single item (split information, or parquet file information)"""
+        params = {"dataset": dataset_name}
+        error_msg = f"Error while fetching {items_name} from HuggingFace"
+        response_json = HuggingFaceDatasetConnector._get(url, error_msg, params=params)
+        items = [
+            file
+            for file in response_json[items_name]
+            if file["config"] == config and file["split"] == split
+        ]
+        if len(items) != 1:
+            msg = (
+                f"HuggingFace's {items_name} endpoint does not contain {config=}, {split=} for "
+                f"dataset {dataset_name} (or returns multiple)."
+            )
+            raise HTTPException(status_code=404, detail=msg)
+        return items[0]
+
+    def fetch_all(self) -> typing.Iterator[DatasetDescription]:
         url = "https://datasets-server.huggingface.co/valid"
         error_msg = "Error while fetching all data from HuggingFace"
         response_json = HuggingFaceDatasetConnector._get(url, error_msg)
-        return list(self._yield_datasets(response_json["valid"]))
-
-    def _yield_datasets(self, dataset_names) -> typing.Iterator[DatasetDescription]:
-        """Yield a Dataset for each (name, config, split) combination."""
-        for dataset_name in dataset_names:
+        for dataset_name in response_json["valid"]:
             yield from self._yield_datasets_with_name(dataset_name)
 
     def _yield_datasets_with_name(self, dataset_name: str) -> typing.Iterator[DatasetDescription]:
@@ -138,6 +130,6 @@ class HuggingFaceDatasetConnector(DatasetConnector):
             name_complete = f"{dataset_name.split('/')[-1]} config:{config} split:{split}"
             yield DatasetDescription(
                 name=name_complete,
-                platform=self.platform(),
-                platform_specific_identifier=identifier_complete,
+                node=self.node_name,
+                node_specific_identifier=identifier_complete,
             )

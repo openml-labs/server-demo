@@ -1,19 +1,19 @@
 import abc
+from typing import Iterator
 
-from connectors.platforms import Platform
+from connectors.node_names import NodeName
 from database.models import Publication
 
 
 class PublicationConnector(abc.ABC):
-    """For every platform that offers publications, this PublicationConnector should be
-    implemented."""
+    """For every node that offers publications, this PublicationConnector should be implemented."""
+
+    @property
+    def node_name(self) -> NodeName:
+        """The node of this connector"""
+        return NodeName.from_class(self.__class__)
 
     @abc.abstractmethod
-    def platform(self) -> Platform:
-        """The platform name of this connector (e.g. openml or huggingface)"""
-        pass
-
-    @abc.abstractmethod
-    def fetch_all(self) -> list[Publication]:
+    def fetch_all(self) -> Iterator[Publication]:
         """Retrieve all publications"""
         pass

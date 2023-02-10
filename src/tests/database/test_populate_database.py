@@ -4,6 +4,12 @@ import responses
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
+from connectors import (
+    ExampleDatasetConnector,
+    ExamplePublicationConnector,
+    OpenMlDatasetConnector,
+    HuggingFaceDatasetConnector,
+)
 from database.models import Publication, DatasetDescription
 from database.setup import populate_database
 from tests.testutils.paths import path_test_resources
@@ -13,7 +19,11 @@ HUGGINGFACE_URL = "https://datasets-server.huggingface.co"
 
 
 def test_example_happy_path(engine: Engine):
-    populate_database(engine, platform_data="example", platform_publications="example")
+    populate_database(
+        engine,
+        dataset_connector=ExampleDatasetConnector(),
+        publications_connector=ExamplePublicationConnector(),
+    )
     with Session(engine) as session:
         datasets = session.scalars(select(DatasetDescription)).all()
         publications = session.scalars(select(Publication)).all()
@@ -28,7 +38,11 @@ def test_openml_happy_path(engine: Engine):
         with open(path_test_resources() / "connectors" / "openml" / "data_list.json", "r") as f:
             response = json.load(f)
         mocked_requests.add(responses.GET, f"{OPENML_URL}/data/list", json=response, status=200)
-        populate_database(engine, platform_data="openml", platform_publications="example")
+        populate_database(
+            engine,
+            dataset_connector=OpenMlDatasetConnector(),
+            publications_connector=ExamplePublicationConnector(),
+        )
 
     with Session(engine) as session:
         datasets = session.scalars(select(DatasetDescription)).all()
@@ -47,13 +61,17 @@ def test_huggingface_happy_path(engine: Engine):
         mocked_requests.add(responses.GET, f"{HUGGINGFACE_URL}/valid", json=response, status=200)
         for split_name in ("0n1xus/codexglue", "04-07-22/wep-probes", "rotten_tomatoes"):
             mock_split(mocked_requests, split_name)
-        populate_database(engine, platform_data="huggingface", platform_publications="example")
+        populate_database(
+            engine,
+            dataset_connector=HuggingFaceDatasetConnector(),
+            publications_connector=ExamplePublicationConnector(),
+        )
 
     with Session(engine) as session:
         datasets = session.scalars(select(DatasetDescription)).all()
         publications = session.scalars(select(Publication)).all()
         assert len(datasets) == 3 * 6
-        ids = [d.platform_specific_identifier for d in datasets]
+        ids = [d.node_specific_identifier for d in datasets]
         names = [d.name for d in datasets]
         assert "0n1xus|codexglue|code-completion-token-py150|train" in ids
         assert "codexglue config:code-completion-token-py150 split:train" in names

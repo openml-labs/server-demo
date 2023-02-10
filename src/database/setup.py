@@ -5,8 +5,7 @@ Utility functions for initializing the database and tables through SQLAlchemy.
 from sqlalchemy import Engine, text, create_engine, select
 from sqlalchemy.orm import Session
 
-import connectors
-from connectors import Platform
+from connectors import DatasetConnector, PublicationConnector
 from .models import Base, DatasetDescription, Publication
 
 
@@ -46,36 +45,25 @@ def connect_to_database(
 def populate_database(
     engine: Engine,
     only_if_empty: bool = True,
-    platform_data: str = "example",
-    platform_publications="example",
+    dataset_connector: DatasetConnector | None = None,
+    publications_connector: PublicationConnector | None = None,
 ):
-    """Add some data to the Dataset and Publication tables.
+    """Add some data to the Dataset and Publication tables."""
 
-    platform_data: str (default="example"): One of "nothing", "example", "huggingface" or "openml".
-    platform_publications: str (default="example"): One of "nothing" or "example".
-    """
-
-    if platform_data == "nothing":
-        datasets = []
+    if dataset_connector is None:
+        datasets_iterable = iter(())
     else:
-        dataset_connector = connectors.dataset_connectors.get(Platform(platform_data), None)
-        if dataset_connector is None:
-            possibilities = ", ".join(f"`{c}`" for c in connectors.dataset_connectors.keys())
-            msg = f"{platform_data=}, but must be one of {possibilities}"
-            raise NotImplementedError(msg)
-        datasets = dataset_connector.fetch_all()
-    if platform_publications == "nothing":
-        publications = []
+        datasets_iterable = dataset_connector.fetch_all()
+    if publications_connector is None:
+        publications_iterable = iter(())
     else:
-        publication_connector = connectors.publication_connectors.get(
-            Platform(platform_publications), None
-        )
-        if publication_connector is None:
-            possibilities = ", ".join(f"`{c}`" for c in connectors.publication_connectors.keys())
-            msg = f"{platform_publications=}, but must be one of {possibilities}"
-            raise NotImplementedError(msg)
-        publications = publication_connector.fetch_all()
+        publications_iterable = publications_connector.fetch_all()
 
+    datasets = list(datasets_iterable)
+    publications = list(publications_iterable)
+    # For now, we cannot make use of generators, because we have to link the datasets with the
+    # publications. This is a temporary setup though, so it makes sense to let the fetch_all()
+    # return an iterator for future benefits.
     _link_datasets_with_publications(datasets, publications)
     with Session(engine) as session:
         data_exists = (
@@ -106,13 +94,13 @@ def _link_datasets_with_publications(datasets, publications):
     benchmark_datasets = [
         d
         for d in datasets
-        if d.platform == "openml" and int(d.platform_specific_identifier) in benchmark_dataset_ids
+        if d.node == "openml" and int(d.node_specific_identifier) in benchmark_dataset_ids
     ]
     benchmark_publications = [p for p in publications if p.title == "AMLB: an AutoML Benchmark"]
     higgs_title = "Searching for exotic particles in high-energy physics with deep learning"
     higgs_publication = [p for p in publications if p.title == higgs_title]
     for publication in higgs_publication:
-        publication.datasets = [d for d in datasets if d.platform == "openml" and d.name == "Higgs"]
+        publication.datasets = [d for d in datasets if d.node == "openml" and d.name == "Higgs"]
     for publication in benchmark_publications:
         publication.datasets = benchmark_datasets
     return datasets, publications
