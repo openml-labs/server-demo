@@ -29,19 +29,25 @@ def connect_to_database(
     -------
     engine: Engine SQLAlchemy Engine configured with a database connection
     """
+
+    if delete_first or create_if_not_exists:
+        drop_or_create_database(url, delete_first)
+    engine = create_engine(url, echo=True)
+
+    with engine.connect() as connection:
+        Base.metadata.create_all(connection, checkfirst=True)
+        connection.commit()
+    return engine
+
+
+def drop_or_create_database(url: str, delete_first: bool):
     server, database = url.rsplit("/", 1)
     engine = create_engine(server, echo=True)
-
     with engine.connect() as connection:
         if delete_first:
             connection.execute(text(f"DROP DATABASE IF EXISTS {database}"))
-        if delete_first or create_if_not_exists:
-            connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {database}"))
-        connection.execute(text(f"USE {database}"))
-        if not connection.execute(text("SHOW TABLES")).all():
-            Base.metadata.create_all(connection)
+        connection.execute(text(f"CREATE DATABASE IF NOT EXISTS {database}"))
         connection.commit()
-    return engine
 
 
 def populate_database(
