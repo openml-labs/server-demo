@@ -1,3 +1,6 @@
+:warning: **This project is archived**: And forked into https://github.com/aiondemand/AIOD-rest-api/
+
+
 # FastAPI + Database (MySQL) Server Demo
 
 This repository contains an example of how to provide a REST API built with [FastAPI](https://fastapi.tiangolo.com/)
